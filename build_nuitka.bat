@@ -15,8 +15,16 @@ set PY=.venv\Scripts\python.exe
 
 "%PY%" -m pip install -r requirements.txt nuitka || exit /b 1
 
-for /f "delims=" %%v in ('"%PY%" -c "from proxy import __version__ as v; print(v)"') do set APP_VERSION=%%v
+set APP_VERSION=
+for /f "tokens=2 delims==" %%v in ('findstr /b /c:"__version__" proxy\__init__.py') do set APP_VERSION=%%v
+set APP_VERSION=%APP_VERSION: =%
+set APP_VERSION=%APP_VERSION:"=%
+if "%APP_VERSION%"=="" (
+    echo Could not read version from proxy\__init__.py
+    exit /b 1
+)
 set FILE_VERSION=%APP_VERSION%.0
+echo Version: %FILE_VERSION%
 
 echo A C compiler is required: Visual Studio Build Tools or MinGW64.
 echo If none is found, Nuitka will offer to download MinGW64 automatically.
