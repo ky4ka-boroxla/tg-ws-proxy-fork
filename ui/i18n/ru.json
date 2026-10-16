@@ -70,7 +70,6 @@
   "button.check_updates": "Проверить обновления",
   "button.page": "Страница",
   "button.close": "Закрыть",
-  "button.donate": "Поддержать ♥",
 
   "validation.bad_host": "Некорректный IP-адрес.",
   "validation.bad_port": "Порт должен быть числом 1-65535",

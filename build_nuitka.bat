@@ -41,7 +41,7 @@ echo.
     --include-package-data=certifi ^
     --include-data-dir=ui/i18n=ui/i18n ^
     --include-data-files=icon.ico=icon.ico ^
-    --company-name=Flowseal ^
+    --company-name=ky4ka-boroxla ^
     --product-name=TgWsProxy ^
     --file-description="Telegram Desktop WebSocket Bridge Proxy" ^
     --file-version=%FILE_VERSION% ^

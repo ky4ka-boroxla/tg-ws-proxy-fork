@@ -22,7 +22,7 @@ from ui.ctk_tooltip import attach_ctk_tooltip, attach_tooltip_to_widgets
 from ui.settings import validate_settings
 from ui.i18n import (
     label_from_language, language_from_label, language_option_labels,
-    set_language, get_language, t,
+    set_language, t,
 )
 
 _INNER_W = 396
@@ -31,9 +31,7 @@ _APPEARANCE_TO_CTK = {"auto": "system", "light": "Light", "dark": "Dark"}
 
 
 def _get_doc_url(doc_name: str) -> str:
-    lang = get_language().value
-    lang_folder = "EN" if lang == "en" else "RU"
-    return f"https://github.com/Flowseal/tg-ws-proxy/blob/main/docs/{lang_folder}/{doc_name}.md"
+    return f"https://github.com/ky4ka-boroxla/tg-ws-proxy-fork/blob/main/docs/RU/{doc_name}.md"
 
 
 def _appearance_options() -> List[str]:
@@ -133,17 +131,6 @@ def _create_header(ctk, frame, theme):
         font=(theme.ui_font_family, 12),
         text_color=theme.text_secondary, anchor="e",
     ).pack(side="right", padx=(4, 0))
-
-    ctk.CTkButton(
-        header, text=t("button.donate"), width=90, height=28,
-        font=(theme.ui_font_family, 13, "bold"), corner_radius=8,
-        fg_color="#22c55e", hover_color="#16a34a",
-        text_color="#ffffff", border_width=0,
-        command=lambda: (
-            header.winfo_toplevel().iconify(),
-            webbrowser.open(_get_doc_url("Funding")),
-        ),
-    ).pack(side="right", padx=(0, 6))
 
 
 def _create_interface(ctk, frame, theme, cfg, default_config):

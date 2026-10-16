@@ -11,7 +11,7 @@ from urllib.request import Request
 
 from proxy.utils import build_github_opener
 
-REPO = "Flowseal/tg-ws-proxy"
+REPO = "ky4ka-boroxla/tg-ws-proxy-fork"
 RELEASES_LATEST_API = f"https://api.github.com/repos/{REPO}/releases/latest"
 RELEASES_PAGE_URL = f"https://github.com/{REPO}/releases/latest"
 
