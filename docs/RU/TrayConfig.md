@@ -1,10 +1,6 @@
 # Файлы конфигурации Tray-приложения
 
-Tray-приложение хранит данные в:
-
-- **Windows:** `%APPDATA%/TgWsProxy`
-- **macOS:** `~/Library/Application Support/TgWsProxy`
-- **Linux:** `~/.config/TgWsProxy` (или `$XDG_CONFIG_HOME/TgWsProxy`)
+Tray-приложение хранит данные в `%APPDATA%/TgWsProxy`.
 
 ```json
 {
@@ -19,7 +15,7 @@ Tray-приложение хранит данные в:
   "buf_kb": 256,
   "pool_size": 4,
   "log_max_mb": 5,
-  "check_updates": true,
+  "check_updates": false,
   "cfproxy": true,
   "h2": true,
   "cfproxy_user_domain_enabled": false,
@@ -33,5 +29,5 @@ Tray-приложение хранит данные в:
 }
 ```
 
-Ключ `check_updates`: при `true` выполняется запрос к GitHub и сравнение текущей версии с последним релизом (только уведомление и ссылка на страницу загрузки).  
-На Windows в конфиге может быть `autostart` (автозапуск при входе в систему).
+Ключ `check_updates`: по умолчанию `false`. При `true` выполняется запрос к GitHub и сравнение текущей версии с последним релизом (только уведомление и ссылка на страницу загрузки).  
+Ключ `autostart` включает автозапуск при входе в систему.
