@@ -28,17 +28,17 @@ APP_NAME = "TgWsProxy"
 PORTABLE_DIR_NAME = "TgWsProxy_data"
 
 
+IS_FROZEN = bool(getattr(sys, "frozen", False)) or "__compiled__" in globals()
+EXE_PATH = Path(os.path.abspath(sys.argv[0])) if "__compiled__" in globals() else Path(sys.executable)
+
+
 def _standard_app_dir() -> Path:
-    if sys.platform == "win32":
-        return Path(os.environ.get("APPDATA", Path.home())) / APP_NAME
-    if sys.platform == "darwin":
-        return Path.home() / "Library" / "Application Support" / APP_NAME
-    return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / APP_NAME
+    return Path(os.environ.get("APPDATA", Path.home())) / APP_NAME
 
 
 def _exe_dir() -> Optional[Path]:
     try:
-        base = getattr(sys, "frozen", False) and sys.executable or sys.argv[0]
+        base = str(EXE_PATH) if IS_FROZEN else sys.argv[0]
     except Exception:
         return None
     if not base:
@@ -101,8 +101,6 @@ FIRST_RUN_MARKER = APP_DIR / ".first_run_done_mtproto"
 IPV6_WARN_MARKER = APP_DIR / ".ipv6_warned"
 
 DEFAULT_CONFIG: Dict[str, Any] = default_tray_config()
-
-IS_FROZEN = bool(getattr(sys, "frozen", False))
 
 
 def ensure_dirs() -> None:
@@ -281,14 +279,7 @@ def make_icon_image(size: int = 64, *, color: Tuple[int, ...] = (0, 136, 204, 25
 
 
 def _font_paths():
-    if sys.platform == "win32":
-        return ["arial.ttf"]
-    if sys.platform == "darwin":
-        return ["/System/Library/Fonts/Helvetica.ttc"]
-    return [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
-    ]
+    return ["arial.ttf"]
 
 
 def load_icon():
@@ -511,7 +502,7 @@ def maybe_notify_update(
     check_update_async(cfg, is_exiting, _on_update)
 
 
-# ctk thread (windows / linux)
+# ctk thread
 
 _ctk_root: Any = None
 _ctk_root_ready = threading.Event()

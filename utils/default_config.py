@@ -1,10 +1,6 @@
-"""
-Общие значения по умолчанию для tray-приложений (Windows / Linux / macOS).
-Единственное отличие по платформе — ключ autostart только на Windows.
-"""
+"""Значения по умолчанию для tray-приложения Windows."""
 from __future__ import annotations
 
-import sys
 import os
 from typing import Any, Dict
 from copy import deepcopy
@@ -16,7 +12,7 @@ _TRAY_DEFAULTS_COMMON: Dict[str, Any] = {
     "host": "127.0.0.1",
     "dc_ip": ["2:149.154.167.220", "4:149.154.167.220"],
     "verbose": False,
-    "check_updates": True,
+    "check_updates": False,
     "log_max_mb": 5,
     "buf_kb": 256,
     "pool_size": 4,
@@ -37,7 +33,6 @@ def default_tray_config() -> Dict[str, Any]:
     cfg["secret"] = os.urandom(16).hex()
     cfg["language"] = detect_system_language().value
 
-    if sys.platform == "win32":
-        cfg["autostart"] = False
+    cfg["autostart"] = False
 
     return cfg

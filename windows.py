@@ -38,14 +38,13 @@ from utils.win32_theme import (
     apply_windows_dark_theme,
 )
 from utils.tray_common import (
-    APP_NAME, DEFAULT_CONFIG, FIRST_RUN_MARKER, IS_FROZEN, LOG_FILE,
+    APP_NAME, DEFAULT_CONFIG, EXE_PATH, FIRST_RUN_MARKER, IS_FROZEN, LOG_FILE,
     acquire_lock, bootstrap, check_ipv6_warning, check_update_async, ctk_run_dialog,
     ensure_ctk_thread, ensure_dirs, load_config, load_icon, log,
     quit_ctk, release_lock, restart_proxy,
     save_config, start_proxy, stop_proxy, tg_proxy_url,
 )
-from utils.update_check import find_asset, get_status, RELEASES_PAGE_URL
-from utils.windows_update import apply_update, asset_name
+from utils.update_check import get_status, RELEASES_PAGE_URL
 from ui.ctk_tray_ui import (
     install_tray_config_buttons, install_tray_config_form,
     populate_first_run_window, tray_settings_scroll_and_footer,
@@ -106,9 +105,7 @@ _u32.MessageBoxW.restype = ctypes.c_int
 _MB_OK_ERR = 0x10
 _MB_OK_INFO = 0x40
 _MB_YESNO_Q = 0x24
-_MB_YESNOCANCEL_Q = 0x23
 _IDYES = 6
-_IDNO = 7
 
 
 def _show_error(text: str, title: Optional[str] = None) -> None:
@@ -123,20 +120,10 @@ def _ask_yes_no(text: str, title: Optional[str] = None) -> bool:
     return _u32.MessageBoxW(None, text, title or t("app.name"), _MB_YESNO_Q) == _IDYES
 
 
-def update_ctk_form(
-    text: str, title: Optional[str] = None, asset: Optional[dict] = None,
-    release_url: Optional[str] = None,
-) -> str:
+def update_ctk_form(text: str, title: Optional[str] = None, release_url: Optional[str] = None) -> str:
     title = title or t("app.name")
     if ctk is None or not ensure_ctk_thread(ctk, _config.get("appearance", "auto")):
-        if not asset:
-            return "open" if _ask_yes_no(t("update.ask_open", version=get_status()["latest"]), title) else "close"
-        result = _u32.MessageBoxW(None, text, title, _MB_YESNOCANCEL_Q)
-        if result == _IDYES:
-            _perform_update(asset)
-        if result == _IDNO:
-            return "open"
-        return "close"
+        return "open" if _ask_yes_no(t("update.ask_open", version=get_status()["latest"]), title) else "close"
 
     result = {"value": "close"}
 
@@ -145,8 +132,8 @@ def update_ctk_form(
         root = create_ctk_toplevel(
             ctk,
             title=title,
-            width=310 if asset else 210,
-            height=130 if asset else 100,
+            width=210,
+            height=100,
             theme=theme,
             topmost=True,
             after_create=lambda r: r.iconbitmap(ICON_PATH),
@@ -166,93 +153,27 @@ def update_ctk_form(
         row = ctk.CTkFrame(frame, fg_color="transparent")
         row.pack(fill="x")
 
-        status_label = ctk.CTkLabel(
-            frame, text="", justify="left", anchor="w", wraplength=270,
-            font=(theme.ui_font_family, 11), text_color=theme.text_secondary,
-        )
-        status_label.pack(fill="x", pady=(6, 0))
-
-        btns: list = []
-
-        def _set_status(msg: str) -> None:
-            root.after(0, lambda: status_label.configure(text=msg))
-
         def _close_with(value: str) -> None:
             result["value"] = value
             root.destroy()
             done.set()
 
-        def _on_update() -> None:
-            for b in btns:
-                b.configure(state="disabled")
-            root.protocol("WM_DELETE_WINDOW", lambda: None)
-            def _run():
-                _perform_update(asset, set_status=_set_status)
-                root.after(0, lambda: [b.configure(state="normal") for b in btns])
-                root.after(0, lambda: root.protocol("WM_DELETE_WINDOW", lambda: _close_with("close")))
-            threading.Thread(target=_run, daemon=True).start()
-
-        if asset:
-            btn_upd = ctk.CTkButton(
-                row, text=t("button.update"), width=88, height=34,
-                font=(theme.ui_font_family, 13), command=_on_update,
-            )
-            btn_upd.pack(side="left", padx=(0, 6))
-            btns.append(btn_upd)
-        btn_pg = ctk.CTkButton(
+        ctk.CTkButton(
             row, text=t("button.page"), width=88, height=34,
             font=(theme.ui_font_family, 13), command=lambda: webbrowser.open(release_url or RELEASES_PAGE_URL),
-        )
-        btn_pg.pack(side="left", padx=(0, 6))
-        btns.append(btn_pg)
-        btn_cl = ctk.CTkButton(
+        ).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(
             row, text=t("button.close"), width=88, height=34,
             font=(theme.ui_font_family, 13),
             fg_color=theme.field_bg, hover_color=theme.field_border,
             text_color=theme.text_primary, border_width=1, border_color=theme.field_border,
             command=lambda: _close_with("close"),
-        )
-        btn_cl.pack(side="left")
-        btns.append(btn_cl)
+        ).pack(side="left")
 
         root.protocol("WM_DELETE_WINDOW", lambda: _close_with("close"))
 
     ctk_run_dialog(_build)
     return result["value"]
-
-
-def _perform_update(asset: dict, set_status=None) -> None:
-    restarting = False
-
-    def _step(msg: str) -> None:
-        log.info("Update: %s", msg)
-        if set_status:
-            set_status(msg)
-
-    def _before_restart() -> None:
-        nonlocal restarting
-        _step(t("update.restarting"))
-        restarting = True
-        stop_proxy()
-        release_lock()
-        _release_win_mutex()
-
-    _step(t("update.downloading"))
-    try:
-        apply_update(asset, _before_restart)
-    except Exception as exc:
-        log.exception("Update failed")
-        if restarting:
-            mutex = _acquire_win_mutex()
-            if mutex is True or mutex is None and acquire_lock():
-                start_proxy(_config, _show_error)
-        msg = t("update.error", msg=exc)
-        if set_status:
-            set_status(msg)
-        else:
-            _show_error(msg)
-        return
-    os._exit(0)
 
 
 def _trigger_update_flow(icon=None, item=None) -> None:
@@ -276,11 +197,9 @@ def _trigger_update_flow(icon=None, item=None) -> None:
                 _tray_icon.menu = _build_menu()
             url = (st.get("html_url") or "").strip() or RELEASES_PAGE_URL
             ver = st.get("latest") or "?"
-            asset = find_asset(asset_name()) if IS_FROZEN else None
 
             choice = update_ctk_form(
                 t("update.available", version=ver),
-                asset=asset,
                 release_url=url,
             )
             if choice == "open":
@@ -303,7 +222,7 @@ def _supports_autostart() -> bool:
 
 
 def _autostart_command() -> str:
-    return f'"{sys.executable}"'
+    return f'"{EXE_PATH}"'
 
 
 def is_autostart_enabled() -> bool:
@@ -564,17 +483,6 @@ def main() -> None:
     if (mutex_result := _acquire_win_mutex()) is False or mutex_result is None and not acquire_lock():
         _show_info(t("dialog.already_running"), os.path.basename(sys.argv[0]))
         return
-
-    if IS_FROZEN:
-        def _cleanup_old_exes():
-            time.sleep(3)
-            exe = Path(sys.executable)
-            backup = exe.with_name(exe.stem + "_oldtgws.exe")
-            try:
-                backup.unlink(missing_ok=True)
-            except OSError:
-                pass
-        threading.Thread(target=_cleanup_old_exes, daemon=True, name="cleanup-old").start()
 
     try:
         run_tray()

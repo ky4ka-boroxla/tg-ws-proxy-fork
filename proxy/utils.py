@@ -3,9 +3,7 @@ import urllib.request
 import http.client
 import ssl
 import logging
-import os
 import re
-import sys
 
 import certifi
 
@@ -144,10 +142,7 @@ class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
 
 
 def create_ssl_context(*, check_hostname: bool = True) -> ssl.SSLContext:
-    bundle_dir = getattr(sys, '_MEIPASS', None)
-    cafile = (os.path.join(bundle_dir, 'certifi', 'cacert.pem')
-              if bundle_dir else certifi.where())
-    context = ssl.create_default_context(cafile=cafile)
+    context = ssl.create_default_context(cafile=certifi.where())
     context.load_default_certs()
     context.check_hostname = check_hostname
     return context

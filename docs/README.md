@@ -1,10 +1,4 @@
 <div align="center">
-
-**🇷🇺 Русский • [🇬🇧 English](./EN/README.md)**
-
-</div>
-
-<div align="center">
 	<br />
 	<p>
 		<img width="1729" height="910" alt="tgwsproxy" src="./images/workflow.png" />
@@ -13,25 +7,14 @@
 
 ##
 
-> [!TIP]
->
-> ### [🎉 Поддержать меня](./RU/Funding.md)
->
-> **USDT (TRC20)**: `TXPnKs2Ww1RD8JN6nChFUVmi5r2hqrWjuu`  
-> **BTC**: `bc1qr8vd6jelkyyry3m4mq6z5txdx4pl856fu6ss0w`  
-> **ETH**: `0x1417878fdc5047E670a77748B34819b9A49C72F1`  
-
 > [!CAUTION]
 >
 > ### Реакция антивирусов
 >
-> Антивирусы часто ошибочно помечают приложение как вирус из-за упаковщика.  
-> Если вы не можете скачать из-за блокировки антивирусом, то:
+> Антивирусы иногда ошибочно помечают приложение как вирус, потому что оно собрано в один exe-файл.  
+> Если не получается скачать или запустить из-за блокировки, добавьте файл в исключения антивируса.
 >
-> 1) **Попробуйте скачать версию для Windows 7 (по функциональности она не отличается)**
-> 2) Отключите антивирус на время скачивания, добавьте файл в исключения и включите обратно  
->
-> Всегда проверяйте, что скачиваете из интернета, тем более из непроверенных источников. Всегда лучше смотреть на детекты широко известных антивирусов на VirusTotal
+> Всегда проверяйте, что скачиваете из интернета. Смотрите на детекты широко известных антивирусов на VirusTotal.
 
 # TG WS Proxy
 
@@ -42,29 +25,22 @@
   <img src="./images/preview-white.png">
 </picture>
 
+Форк проекта [Flowseal/tg-ws-proxy](https://github.com/Flowseal/tg-ws-proxy), оставлена только версия для Windows.
+
 ## Навигация
 
-- **🚀 Быстрый старт**
-  - **[Windows](./RU/README.windows.md)**
-  - **[macOS](./RU/README.macos.md)**
-  - **[Linux](./RU/README.linux.md)**
-  - **[Docker](./RU/README.docker.md)**
+- [Быстрый старт](#быстрый-старт)
+- [Как это работает](#как-это-работает)
+- [Сборка из исходников](#сборка-из-исходников)
 - [Настройка Cloudflare Worker'а (бесплатный аналог CF-прокси)](./RU/CfWorker.md)
 - [Настройка Cloudflare-домена (CF-прокси)](./RU/CfProxy.md)
 - [Тестовое окружение Telegram (тестовые DC)](./RU/TestDc.md)
 - [Fake TLS + upstream в Nginx](./RU/FakeTlsNginx.md)
 - [Файлы конфигурации Tray-приложения](./RU/TrayConfig.md)
-- [Установка из исходников](./RU/BuildFromSource.md)
-- [Руководство для контрибьюторов](./CONTRIBUTING.md)
 
-## Windows: быстрый вход
+## Быстрый старт
 
-Перейдите на [страницу релизов](https://github.com/Flowseal/tg-ws-proxy/releases) и скачайте:
-
-- `TgWsProxy_windows.exe` (Windows 10+ x64)
-- `TgWsProxy_windows_arm64.exe` (Windows 10+ ARM64)
-- `TgWsProxy_windows_7_64bit.exe` (Windows 7 x64)
-- `TgWsProxy_windows_7_32bit.exe` (Windows 7 x32)
+Скачайте `TgWsProxy.exe` на странице релизов репозитория и запустите его.
 
 При первом запуске откроется окно с инструкцией по подключению Telegram Desktop. **Приложение сворачивается в системный трей.**
 
@@ -73,7 +49,7 @@
 - **Открыть в Telegram** — автоматически настроить прокси через ссылку `tg://proxy`
 - **Скопировать ссылку** — скопировать ссылку для подключения
 - **Перезапустить прокси** — перезапуск без выхода из приложения
-- **Настройки...** — GUI-редактор конфигурации (версия приложения, опциональная проверка обновлений с GitHub)
+- **Настройки...** — GUI-редактор конфигурации (версия приложения, опциональная проверка новых версий)
 - **Открыть логи** — открыть файл логов
 - **Выход** — остановить прокси и закрыть приложение
 
@@ -117,28 +93,26 @@ Telegram Desktop → MTProto Proxy (127.0.0.1:1443) → WebSocket → Telegram D
 > Подобная проблема встречается на аккаунтах без Premium  
 > Если это не помогло, настройте собственный домен по инструкции: [CfProxy.md](./RU/CfProxy.md)
 
-## Автоматическая сборка
+## Сборка из исходников
 
-Проект содержит спецификации PyInstaller ([`packaging/windows.spec`](../packaging/windows.spec), [`packaging/macos.spec`](../packaging/macos.spec), [`packaging/linux.spec`](../packaging/linux.spec)) и GitHub Actions workflow ([`.github/workflows/build.yml`](../.github/workflows/build.yml)) для автоматической сборки.
+Требуется Windows 10+ и Python 3.9+.
 
-Минимально поддерживаемые версии ОС для текущих бинарных сборок:
+1. Склонируйте репозиторий
+2. Запустите `build_nuitka.bat`
+3. Готовый файл появится в `dist\TgWsProxy.exe`
 
-- Windows 10+ x64 для `TgWsProxy_windows.exe`
-- Windows 10+ ARM64 для `TgWsProxy_windows_arm64.exe`
-- Windows 7 (x64) для `TgWsProxy_windows_7_64bit.exe`
-- Windows 7 (x32) для `TgWsProxy_windows_7_32bit.exe`
-- Intel macOS 10.15+
-- Apple Silicon macOS 11.0+
-- Linux x86_64 (требуется AppIndicator для системного трея)
+Скрипт сам создаст виртуальное окружение `.venv`, установит зависимости из `requirements.txt` и Nuitka. Для сборки нужен C-компилятор (Visual Studio Build Tools или MinGW64). Если его нет, Nuitka предложит скачать MinGW64 автоматически.
 
-## Контрибьюторы
+Запуск без сборки:
 
-Спасибо всем, кто помогает развивать проект ❤️
-
-<a href="https://github.com/Flowseal/tg-ws-proxy/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Flowseal/tg-ws-proxy" />
-</a>
+```
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\python windows.py
+```
 
 ## Лицензия
 
 [MIT License](../LICENSE)
+
+Оригинальный проект: [Flowseal/tg-ws-proxy](https://github.com/Flowseal/tg-ws-proxy).

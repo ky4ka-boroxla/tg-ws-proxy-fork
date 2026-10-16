@@ -63,7 +63,7 @@ class CtkTooltip:
             fg_color="#2b2b2b",
             text_color="#f0f0f0",
             corner_radius=0,
-            font=("Segoe UI", 14) if _is_windows() else None,
+            font=("Segoe UI", 14),
         )
         lbl.pack(padx=10, pady=8)
         x = self.widget.winfo_rootx() + 12
@@ -83,12 +83,6 @@ class CtkTooltip:
     def _on_destroy(self, _event: Any = None) -> None:
         self._hide()
         self.widget = None
-
-
-def _is_windows() -> bool:
-    import sys
-
-    return sys.platform == "win32"
 
 
 def attach_ctk_tooltip(

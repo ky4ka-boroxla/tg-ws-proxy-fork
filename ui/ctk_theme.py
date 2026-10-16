@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import tkinter
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Tuple
@@ -46,9 +45,7 @@ class CtkTheme:
 
 
 def ctk_theme_for_platform() -> CtkTheme:
-    if sys.platform == "win32":
-        return CtkTheme(ui_font_family="Segoe UI", mono_font_family="Consolas")
-    return CtkTheme()
+    return CtkTheme(ui_font_family="Segoe UI", mono_font_family="Consolas")
 
 
 _APPEARANCE_MODE_MAP = {"auto": "system", "light": "Light", "dark": "Dark"}
@@ -76,17 +73,16 @@ def create_ctk_toplevel(
 ) -> Any:
     root = ctk.CTkToplevel()
 
-    if sys.platform == "win32":
-        def handle_ctrl_shortcut(event: Any) -> Optional[str]:
-            shortcuts = {65: ("a", "<<SelectAll>>"), 67: ("c", "<<Copy>>"), 86: ("v", "<<Paste>>")}
-            shortcut = shortcuts.get(event.keycode)
-            if shortcut and event.keysym.lower() != shortcut[0] and not event.state & 0x20000:
-                event.widget.event_generate(shortcut[1])
-                return "break"
-            return None
+    def handle_ctrl_shortcut(event: Any) -> Optional[str]:
+        shortcuts = {65: ("a", "<<SelectAll>>"), 67: ("c", "<<Copy>>"), 86: ("v", "<<Paste>>")}
+        shortcut = shortcuts.get(event.keycode)
+        if shortcut and event.keysym.lower() != shortcut[0] and not event.state & 0x20000:
+            event.widget.event_generate(shortcut[1])
+            return "break"
+        return None
 
-        root.bind("<Control-KeyPress>", handle_ctrl_shortcut, add="+")
-        
+    root.bind("<Control-KeyPress>", handle_ctrl_shortcut, add="+")
+
     root.title(title)
     root.resizable(False, False)
     center_ctk_geometry(root, width, height)

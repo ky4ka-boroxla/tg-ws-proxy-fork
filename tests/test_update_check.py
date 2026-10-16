@@ -1,8 +1,6 @@
 import hashlib
 import io
 import json
-import os
-import sys
 import tempfile
 import threading
 import unittest
@@ -104,112 +102,6 @@ def _opener(response):
     return mock.Mock(return_value=opener)
 
 
-class DownloadAssetTest(unittest.TestCase):
-    def _download(self, response, digest=DIGEST):
-        with tempfile.TemporaryDirectory() as tmp:
-            with mock.patch.object(update_check, 'build_github_opener', _opener(response)):
-                path = update_check.download_asset(
-                    'https://example.invalid/a', Path(tmp), suffix='.bin', digest=digest,
-                )
-            try:
-                return path.read_bytes(), sorted(p.name for p in Path(tmp).iterdir())
-            finally:
-                path.unlink(missing_ok=True)
-
-    def test_complete_download_is_kept(self):
-        body, files = self._download(_Response(b'payload'))
-        self.assertEqual(body, b'payload')
-        self.assertEqual(len(files), 1)
-
-    def test_matching_digest_is_accepted(self):
-        digest = 'sha256:' + hashlib.sha256(b'payload').hexdigest()
-        body, _ = self._download(_Response(b'payload'), digest=digest)
-        self.assertEqual(body, b'payload')
-
-    def test_invalid_or_missing_digest_is_rejected_before_any_download(self):
-        for digest in ('', None, 123, 'md5:whatever', 'sha256:ab', 'sha256:' + 'z' * 64):
-            with self.subTest(digest=digest), tempfile.TemporaryDirectory() as tmp:
-                with mock.patch.object(update_check, 'build_github_opener') as opener:
-                    with self.assertRaises(ValueError):
-                        update_check.download_asset('https://example.invalid/a', Path(tmp), digest=digest)
-                opener.assert_not_called()
-                self.assertEqual(list(Path(tmp).iterdir()), [])
-
-    def test_truncated_download_raises_and_leaves_no_file(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            resp = _Response(b'pay', content_length=None)
-            with mock.patch.object(update_check, 'build_github_opener', _opener(resp)):
-                with self.assertRaises(OSError):
-                    update_check.download_asset(
-                        'https://example.invalid/a', Path(tmp), suffix='.bin', digest=DIGEST,
-                    )
-            self.assertEqual(list(Path(tmp).iterdir()), [])
-
-    def test_digest_mismatch_raises_and_leaves_no_file(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            resp = _Response(b'payload')
-            with mock.patch.object(update_check, 'build_github_opener', _opener(resp)):
-                with self.assertRaises(OSError):
-                    update_check.download_asset(
-                        'https://example.invalid/a', Path(tmp),
-                        suffix='.bin', digest='sha256:' + '0' * 64,
-                    )
-            self.assertEqual(list(Path(tmp).iterdir()), [])
-
-    def test_missing_content_length_is_tolerated(self):
-        body, _ = self._download(_Response(b'payload', content_length=None))
-        self.assertEqual(body, b'payload')
-
-    def test_same_length_corruption_is_rejected(self):
-        with self.assertRaisesRegex(OSError, 'SHA-256'):
-            self._download(_Response(b'payloae'))
-
-    def test_uppercase_checksum_is_accepted(self):
-        body, _ = self._download(_Response(PAYLOAD), digest=DIGEST.upper())
-        self.assertEqual(body, PAYLOAD)
-
-    def test_stream_failure_removes_partial_file(self):
-        for error in (TimeoutError('read timed out'), IncompleteRead(b'pay', 4)):
-            with self.subTest(error=error), tempfile.TemporaryDirectory() as tmp:
-                response = mock.MagicMock()
-                response.__enter__.return_value = response
-                response.read.side_effect = [b'pay', error]
-                with mock.patch.object(update_check, 'build_github_opener', _opener(response)):
-                    with self.assertRaises(type(error)):
-                        update_check.download_asset('https://example.invalid/a', Path(tmp), digest=DIGEST)
-                self.assertEqual(list(Path(tmp).iterdir()), [])
-
-    def test_hash_covers_every_chunk_and_read_timeout_is_set(self):
-        body = PAYLOAD * 20000
-        opener = _opener(_Response(body))
-        with tempfile.TemporaryDirectory() as tmp:
-            with mock.patch.object(update_check, 'build_github_opener', opener):
-                path = update_check.download_asset(
-                    'https://example.invalid/a', Path(tmp),
-                    digest='sha256:' + hashlib.sha256(body).hexdigest(), timeout=7,
-                )
-            self.assertEqual(path.read_bytes(), body)
-        opener.return_value.open.assert_called_once_with('https://example.invalid/a', timeout=7)
-
-
-class FindAssetTest(unittest.TestCase):
-    def test_returns_asset_with_digest(self):
-        assets = [{'name': 'a.deb', 'url': 'https://example.invalid/a.deb', 'digest': DIGEST}]
-        with mock.patch.dict(update_check._state, {'assets': assets}):
-            self.assertEqual(update_check.find_asset('a.deb'), assets[0])
-            self.assertIsNone(update_check.find_asset('b.deb'))
-
-    def test_ignores_asset_without_url(self):
-        with mock.patch.dict(update_check._state, {'assets': [{'name': 'a.deb', 'url': ''}]}):
-            self.assertIsNone(update_check.find_asset('a.deb'))
-
-    def test_assets_without_a_valid_checksum_require_manual_installation(self):
-        for digest in ('', 'sha256:ab', 'md5:' + '0' * 32):
-            asset = {'name': 'a.exe', 'url': 'https://example.invalid/a.exe', 'digest': digest}
-            with self.subTest(digest=digest), mock.patch.dict(update_check._state, {'assets': [asset]}):
-                self.assertIsNone(update_check.find_asset('a.exe'))
-
-
 class RunCheckTest(unittest.TestCase):
     def setUp(self):
         self.patch = mock.patch.object(update_check, '_state', update_check.get_status())
@@ -291,12 +183,10 @@ class RunCheckTest(unittest.TestCase):
         self._check({'tag_name': 'v2.0', 'assets': [{
             'name': 'a.exe', 'browser_download_url': 'https://example.invalid/a.exe', 'digest': DIGEST,
         }]})
-        asset = update_check.find_asset('a.exe')
-        asset['digest'] = 'bad'
         snapshot = update_check.get_status()
         snapshot['assets'][0]['digest'] = 'bad'
         snapshot['assets'].clear()
-        self.assertEqual(update_check.find_asset('a.exe')['digest'], DIGEST)
+        self.assertEqual(update_check.get_status()['assets'][0]['digest'], DIGEST)
 
     def test_old_cache_is_ignored_and_no_new_cache_is_written(self):
         from utils import tray_common
@@ -319,18 +209,6 @@ class RunCheckTest(unittest.TestCase):
         self.assertFalse(args[0].has_header('If-none-match'))
         self.assertEqual(kwargs['timeout'], 7)
 
-
-class RelaunchEnvTest(unittest.TestCase):
-    def test_old_and_new_bootloader_variables_and_bundle_subdirectories_are_removed(self):
-        bundle = str(Path(tempfile.gettempdir()) / '_MEItest')
-        env = {
-            '_PYI_APPLICATION_HOME_DIR': bundle, '_PYI_ARCHIVE_FILE': 'old.exe',
-            '_MEIPASS': bundle, '_MEIPASS2': bundle,
-            'PATH': os.pathsep.join((bundle, bundle + os.sep + 'lib', bundle + '-other')),
-        }
-        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(sys, '_MEIPASS', bundle, create=True):
-            result = update_check.relaunch_env()
-        self.assertEqual(result, {'PATH': bundle + '-other', 'PYINSTALLER_RESET_ENVIRONMENT': '1'})
 
 
 if __name__ == '__main__':

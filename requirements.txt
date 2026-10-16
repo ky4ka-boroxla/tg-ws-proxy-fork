@@ -1,0 +1,8 @@
+pyperclip==1.9.0
+certifi
+httpx[http2]==0.28.1
+psutil==7.0.0
+cryptography==46.0.5
+Pillow==12.1.1
+customtkinter==5.2.2
+pystray==0.19.5

@@ -1,18 +1,12 @@
-"""One startup check against GitHub Releases and verified asset downloads."""
+"""Check against GitHub Releases."""
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
-import os
 import re
-import sys
-import tempfile
-from contextlib import suppress
 from http.client import HTTPException
 from itertools import zip_longest
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from urllib.request import Request
 
 from proxy.utils import build_github_opener
@@ -97,65 +91,6 @@ def run_check(current_version: str) -> None:
     _state = state
 
 
-def download_asset(
-    url: str, dest_dir: Path, suffix: str = ".tmp", digest: str = "",
-    timeout: float = 30.0,
-) -> Path:
-    """Return a temporary file only after its mandatory SHA-256 has matched."""
-    expected = _SHA256.fullmatch(digest if isinstance(digest, str) else "")
-    if not expected:
-        raise ValueError("The release asset has no valid SHA-256 checksum")
-
-    fd, name = tempfile.mkstemp(dir=str(dest_dir), suffix=suffix, prefix="TgWsProxy_tmp_")
-    path = Path(name)
-    try:
-        sha = hashlib.sha256()
-        with os.fdopen(fd, "wb") as out, build_github_opener().open(url, timeout=timeout) as resp:
-            while True:
-                chunk = resp.read(65536)
-                if not chunk:
-                    break
-                out.write(chunk)
-                sha.update(chunk)
-        if sha.hexdigest() != expected[1].lower():
-            raise OSError("SHA-256 checksum does not match the release asset")
-        return path
-    except BaseException:
-        with suppress(OSError):
-            path.unlink()
-        raise
-
-
-def find_asset(name: str) -> Optional[Dict[str, str]]:
-    """Find an asset suitable for automatic installation."""
-    for asset in _state["assets"]:
-        if asset["name"] == name and asset["url"] and _SHA256.fullmatch(asset["digest"]):
-            return dict(asset)
-    return None
-
-
 def get_status() -> Dict[str, Any]:
     state = _state
     return {**state, "assets": [dict(a) for a in state["assets"]]}
-
-
-def relaunch_env() -> Dict[str, str]:
-    """Use system libraries and unpack a fresh bundle with PyInstaller 5 or 6."""
-    env = {k: v for k, v in os.environ.items() if not k.startswith(("_PYI_", "_MEIPASS"))}
-    mei = getattr(sys, "_MEIPASS", None)
-    if mei:
-        env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
-    for var in ("PATH", "LD_LIBRARY_PATH", "GI_TYPELIB_PATH", "GTK_PATH",
-                "GST_PLUGIN_PATH", "GIO_MODULE_DIR"):
-        original = env.pop(var + "_ORIG", None)
-        if original is not None:
-            env[var] = original
-        elif mei and env.get(var):
-            bundle = os.path.normcase(os.path.abspath(mei))
-            kept = [p for p in env[var].split(os.pathsep)
-                    if not (os.path.normcase(os.path.abspath(p)) + os.sep).startswith(bundle + os.sep)]
-            if kept:
-                env[var] = os.pathsep.join(kept)
-            else:
-                env.pop(var, None)
-    return env

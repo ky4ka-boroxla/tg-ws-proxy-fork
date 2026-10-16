@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-import sys
 
 def is_windows_dark_theme() -> bool:
-    if sys.platform != "win32":
-        return False
-
     try:
         import winreg
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
