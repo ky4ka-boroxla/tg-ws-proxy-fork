@@ -55,3 +55,5 @@ if errorlevel 1 exit /b 1
 echo.
 echo Done: dist\TgWsProxy.exe
 endlocal
+
+pause
