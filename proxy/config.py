@@ -15,7 +15,7 @@ from .utils import build_github_opener
 log = logging.getLogger('tg-mtproto-proxy')
 
 CFPROXY_DOMAINS_URL = (
-    "https://raw.githubusercontent.com/Flowseal/tg-ws-proxy/main"
+    "https://raw.githubusercontent.com/ky4ka-boroxla/tg-ws-proxy-fork/main"
     "/.github/cfproxy-domains.txt"
 )
 

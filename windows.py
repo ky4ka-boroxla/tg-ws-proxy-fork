@@ -31,7 +31,7 @@ try:
 except ImportError:
     Image = None
 
-from proxy import __version__, get_link_host
+from proxy import get_link_host
 
 from utils.win32_theme import (
     is_windows_dark_theme, 
@@ -39,12 +39,11 @@ from utils.win32_theme import (
 )
 from utils.tray_common import (
     APP_NAME, DEFAULT_CONFIG, EXE_PATH, FIRST_RUN_MARKER, IS_FROZEN, LOG_FILE,
-    acquire_lock, bootstrap, check_ipv6_warning, check_update_async, ctk_run_dialog,
+    acquire_lock, bootstrap, check_ipv6_warning, ctk_run_dialog,
     ensure_ctk_thread, ensure_dirs, load_config, load_icon, log,
     quit_ctk, release_lock, restart_proxy,
     save_config, start_proxy, stop_proxy, tg_proxy_url,
 )
-from utils.update_check import get_status, RELEASES_PAGE_URL
 from ui.ctk_tray_ui import (
     install_tray_config_buttons, install_tray_config_form,
     populate_first_run_window, tray_settings_scroll_and_footer,
@@ -60,23 +59,32 @@ _tray_icon: Optional[object] = None
 _config: dict = {}
 _exiting = False
 _win_mutex_handle = None
-_update_flow_lock = threading.Lock()
+_settings_lock = threading.Lock()
 
 _ERROR_ALREADY_EXISTS = 183
+
+
+def _kernel32():
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateMutexW.restype = ctypes.c_void_p
+    kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
+    kernel32.ReleaseMutex.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    return kernel32
 
 
 def _acquire_win_mutex() -> bool | None:
     global _win_mutex_handle
     try:
-        kernel32 = ctypes.windll.kernel32
-        kernel32.CreateMutexW.restype = ctypes.c_void_p
-        kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
+        kernel32 = _kernel32()
+        ctypes.set_last_error(0)
         handle = kernel32.CreateMutexW(None, True, "Local\\TgWsProxy_SingleInstance")
-        if kernel32.GetLastError() == _ERROR_ALREADY_EXISTS:
-            kernel32.CloseHandle(ctypes.c_void_p(handle))
-            return False
+        error = ctypes.get_last_error()
         if not handle:
             return None
+        if error == _ERROR_ALREADY_EXISTS:
+            kernel32.CloseHandle(handle)
+            return False
         _win_mutex_handle = handle
         return True
     except Exception:
@@ -87,12 +95,13 @@ def _release_win_mutex() -> None:
     global _win_mutex_handle
     if _win_mutex_handle:
         try:
-            kernel32 = ctypes.windll.kernel32
-            kernel32.ReleaseMutex(ctypes.c_void_p(_win_mutex_handle))
-            kernel32.CloseHandle(ctypes.c_void_p(_win_mutex_handle))
+            kernel32 = _kernel32()
+            kernel32.ReleaseMutex(_win_mutex_handle)
+            kernel32.CloseHandle(_win_mutex_handle)
         except Exception:
             pass
         _win_mutex_handle = None
+
 
 ICON_PATH = str(Path(__file__).parent / "icon.ico")
 
@@ -104,8 +113,6 @@ _u32.MessageBoxW.restype = ctypes.c_int
 
 _MB_OK_ERR = 0x10
 _MB_OK_INFO = 0x40
-_MB_YESNO_Q = 0x24
-_IDYES = 6
 
 
 def _show_error(text: str, title: Optional[str] = None) -> None:
@@ -116,100 +123,6 @@ def _show_info(text: str, title: Optional[str] = None) -> None:
     _u32.MessageBoxW(None, text, title or t("app.name"), _MB_OK_INFO)
 
 
-def _ask_yes_no(text: str, title: Optional[str] = None) -> bool:
-    return _u32.MessageBoxW(None, text, title or t("app.name"), _MB_YESNO_Q) == _IDYES
-
-
-def update_ctk_form(text: str, title: Optional[str] = None, release_url: Optional[str] = None) -> str:
-    title = title or t("app.name")
-    if ctk is None or not ensure_ctk_thread(ctk, _config.get("appearance", "auto")):
-        return "open" if _ask_yes_no(t("update.ask_open", version=get_status()["latest"]), title) else "close"
-
-    result = {"value": "close"}
-
-    def _build(done: threading.Event) -> None:
-        theme = ctk_theme_for_platform()
-        root = create_ctk_toplevel(
-            ctk,
-            title=title,
-            width=210,
-            height=100,
-            theme=theme,
-            topmost=True,
-            after_create=lambda r: r.iconbitmap(ICON_PATH),
-        )
-        frame = main_content_frame(ctk, root, theme, padx=16, pady=14)
-
-        ctk.CTkLabel(
-            frame,
-            text=text,
-            justify="left",
-            anchor="w",
-            wraplength=270,
-            font=(theme.ui_font_family, 12),
-            text_color=theme.text_primary,
-        ).pack(fill="x", pady=(0, 10))
-
-        row = ctk.CTkFrame(frame, fg_color="transparent")
-        row.pack(fill="x")
-
-        def _close_with(value: str) -> None:
-            result["value"] = value
-            root.destroy()
-            done.set()
-
-        ctk.CTkButton(
-            row, text=t("button.page"), width=88, height=34,
-            font=(theme.ui_font_family, 13), command=lambda: webbrowser.open(release_url or RELEASES_PAGE_URL),
-        ).pack(side="left", padx=(0, 6))
-        ctk.CTkButton(
-            row, text=t("button.close"), width=88, height=34,
-            font=(theme.ui_font_family, 13),
-            fg_color=theme.field_bg, hover_color=theme.field_border,
-            text_color=theme.text_primary, border_width=1, border_color=theme.field_border,
-            command=lambda: _close_with("close"),
-        ).pack(side="left")
-
-        root.protocol("WM_DELETE_WINDOW", lambda: _close_with("close"))
-
-    ctk_run_dialog(_build)
-    return result["value"]
-
-
-def _trigger_update_flow(icon=None, item=None) -> None:
-    """Show the update dialog for an update already known to be available.
-
-    Reused by the tray "Update" item and the settings dialog's "Update"
-    button, so an update can still be started after the initial startup
-    prompt was skipped/closed.
-    """
-    if not _update_flow_lock.acquire(blocking=False):
-        return
-
-    def _show() -> None:
-        try:
-            if _exiting:
-                return
-            st = get_status()
-            if not st.get("has_update"):
-                return
-            if _tray_icon is not None:
-                _tray_icon.menu = _build_menu()
-            url = (st.get("html_url") or "").strip() or RELEASES_PAGE_URL
-            ver = st.get("latest") or "?"
-
-            choice = update_ctk_form(
-                t("update.available", version=ver),
-                release_url=url,
-            )
-            if choice == "open":
-                webbrowser.open(url)
-        except Exception as exc:
-            log.warning("Update flow failed: %s", repr(exc))
-        finally:
-            _update_flow_lock.release()
-
-    threading.Thread(target=_show, daemon=True, name="manual-update").start()
 
 
 # autostart (registry)
@@ -296,7 +209,16 @@ def _on_restart(icon=None, item=None) -> None:
 
 
 def _on_edit_config(icon=None, item=None) -> None:
-    threading.Thread(target=_edit_config_dialog, daemon=True).start()
+    if not _settings_lock.acquire(blocking=False):
+        return
+
+    def _run() -> None:
+        try:
+            _edit_config_dialog()
+        finally:
+            _settings_lock.release()
+
+    threading.Thread(target=_run, daemon=True).start()
 
 
 def _on_open_logs(icon=None, item=None) -> None:
@@ -356,7 +278,6 @@ def _edit_config_dialog() -> None:
             ctk, scroll, theme, cfg, DEFAULT_CONFIG,
             show_autostart=_supports_autostart(),
             autostart_value=cfg.get("autostart", False),
-            on_update_click=_trigger_update_flow,
         )
 
         def _finish() -> None:
@@ -432,15 +353,6 @@ def _build_menu():
         pystray.MenuItem(t("tray.exit"), _on_exit),
     ]
 
-    st = get_status()
-    if st.get("has_update"):
-        items[-2:-2] = [
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem(
-                t("tray.update", current=__version__, new=st.get("latest") or "?"),
-                _trigger_update_flow,
-            )
-        ]
     return pystray.Menu(*items)
 
 
@@ -467,7 +379,6 @@ def run_tray() -> None:
         return
 
     start_proxy(_config, _show_error)
-    check_update_async(_config, lambda: _exiting, lambda version, url: _trigger_update_flow())
     _show_first_run()
     check_ipv6_warning(_show_info)
 

@@ -12,7 +12,6 @@ _TRAY_DEFAULTS_COMMON: Dict[str, Any] = {
     "host": "127.0.0.1",
     "dc_ip": ["2:149.154.167.220", "4:149.154.167.220"],
     "verbose": False,
-    "check_updates": False,
     "log_max_mb": 5,
     "buf_kb": 256,
     "pool_size": 4,

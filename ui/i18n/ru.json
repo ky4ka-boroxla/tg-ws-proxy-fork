@@ -2,7 +2,6 @@
   "app.name": "TG WS Proxy",
   "app.error_title": "TG WS Proxy — Ошибка",
   "app.settings_title": "TG WS Proxy — Настройки",
-  "app.update_title": "TG WS Proxy — обновление",
 
   "language.ru": "Русский",
   "language.en": "English",
@@ -23,7 +22,6 @@
   "tip.h2": "Объединять загрузку медиа через Cloudflare в общее HTTP/2-соединение для каждого датацентра и домена.\nТребуется включённый CF-прокси и включённый TLS.",
   "section.cfworker": "Cloudflare Worker",
   "section.logs": "Логи и производительность",
-  "section.updates": "Обновления",
   "section.windows_startup": "Запуск Windows",
 
   "label.host": "IP-адрес",
@@ -38,7 +36,6 @@
   "label.buf_kb": "Буфер, КБ (по умолчанию 256)",
   "label.pool_size": "Пул WebSocket-сессий (по умолчанию 4)",
   "label.log_max_mb": "Макс. размер лога, МБ (по умолчанию 5)",
-  "label.check_updates": "Проверять обновления при запуске",
   "label.autostart": "Автозапуск при включении компьютера",
   "label.autostart_hint": "Если переместить программу в другую папку, запись автозапуска может сброситься.",
 
@@ -52,7 +49,6 @@
   "tip.pool": "Сколько готовых WebSocket-соединений держать для каждого датацентра.\n0 отключает прямой DC->IP WebSocket-маршрут",
   "tip.log_mb": "Максимальный размер файла лога; при достижении лимита файл перезаписывается",
   "tip.autostart": "Запускать TG WS Proxy при входе в Windows. Если вы переместите программу в другую папку, автозапуск сбросится",
-  "tip.check_updates": "При запуске проверять наличие обновлений",
   "tip.cfproxy": "Использовать Cloudflare прокси для недоступных датацентров",
   "tip.cfproxy_domain": "Ваши собственные домены, проксируемые через Cloudflare, для HTTP/2 и WS-подключений.\nНесколько доменов указывайте через запятую.\nЕсли не указаны — выбираются автоматически из поддерживаемых доменов",
   "tip.cfproxy_user_domain_cb": "Указать свои домены вместо автоматического выбора",
@@ -64,12 +60,7 @@
   "button.cancel": "Отмена",
   "button.test": "Тест",
   "button.test_loading": "...",
-  "button.open_release": "Открыть страницу релиза",
   "button.start": "Начать",
-  "button.update": "Обновить",
-  "button.check_updates": "Проверить обновления",
-  "button.page": "Страница",
-  "button.close": "Закрыть",
 
   "validation.bad_host": "Некорректный IP-адрес.",
   "validation.bad_port": "Порт должен быть числом 1-65535",
@@ -96,12 +87,6 @@
   "connectivity.multi_fail": "✗ {domain}: недоступен",
   "connectivity.multi_partial": "~ {domain}: работают {ok_list}; недоступны {fail_list}",
 
-  "updates.status_error": "Не удалось связаться с GitHub. Проверьте сеть.",
-  "updates.status_pending": "Обновления ещё не проверялись.",
-  "updates.status_checking": "Проверка обновлений...",
-  "updates.status_available": "На GitHub доступна версия {latest} (у вас {current}).",
-  "updates.status_ahead": "У вас {current} — новее последнего релиза на GitHub ({latest}).",
-  "updates.status_latest": "Установлена последняя известная версия с GitHub.",
 
   "first_run.title": "Прокси запущен и работает в системном трее",
   "first_run.how_to": "Как подключить Telegram Desktop:",
@@ -119,7 +104,6 @@
   "tray.restart": "Перезапустить прокси",
   "tray.settings": "Настройки...",
   "tray.logs": "Открыть логи",
-  "tray.update": "Обновить ({current} → {new})",
   "tray.exit": "Выход",
 
   "dialog.restart_title": "Перезапустить?",
@@ -127,7 +111,6 @@
   "dialog.already_running": "Приложение уже запущено, проверьте трей.",
   "dialog.log_not_found": "Файл логов ещё не создан.",
   "dialog.ctk_missing": "customtkinter не установлен.",
-  "dialog.copy_ok": "Ссылка скопирована в буфер обмена, отправьте её в Telegram и нажмите по ней ЛКМ:\n{url}",
   "dialog.copy_fail": "Не удалось скопировать ссылку:\n{error}",
   "dialog.open_tg_fail": "Не удалось открыть Telegram автоматически.\n\n{detail}",
   "dialog.open_tg_fail_clipboard": "Ссылка скопирована в буфер обмена, отправьте её в Telegram и нажмите по ней ЛКМ:\n{url}",
@@ -136,13 +119,6 @@
   "dialog.log_open_fail": "Не удалось открыть файл логов:\n{error}",
   "dialog.autostart_fail": "Не удалось изменить автозапуск.\n\nПопробуйте запустить приложение от имени пользователя с правами на реестр.\n\nОшибка: {error}",
 
-  "update.available": "Доступна новая версия: {version}",
-  "update.ask_open": "Доступна новая версия: {version}\n\nОткрыть страницу релиза в браузере?",
-  "update.ask_install": "Доступна новая версия: {version}\n\nОбновить сейчас? Приложение будет перезапущено.",
-  "update.install_fail": "Не удалось установить обновление:\n{error}\n\nОткрыть страницу релиза в браузере?",
-  "update.downloading": "Скачивание...",
-  "update.restarting": "Перезапуск...",
-  "update.error": "Ошибка: {msg}",
 
   "error.dc_config": "Ошибка конфигурации DC → IP.",
 

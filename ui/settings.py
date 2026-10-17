@@ -10,7 +10,7 @@ from proxy import coerce_domain_list, parse_dc_ip_list
 from ui.i18n import t
 
 UI_ONLY_KEYS = frozenset({
-    "appearance", "autostart", "check_updates", "language"
+    "appearance", "autostart", "language"
 })
 
 
