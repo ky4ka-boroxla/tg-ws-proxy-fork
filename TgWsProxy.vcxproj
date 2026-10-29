@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{6F1C2D3E-4A5B-4C7D-8E9F-0A1B2C3D4E5F}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <RootNamespace>TgWsProxy</RootNamespace>
+    <ProjectName>TgWsProxy</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>set "PATH=%USERPROFILE%\.cargo\bin;%PATH%" &amp;&amp; cd /d "$(ProjectDir)" &amp;&amp; cargo build --bins</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>set "PATH=%USERPROFILE%\.cargo\bin;%PATH%" &amp;&amp; cd /d "$(ProjectDir)" &amp;&amp; cargo clean &amp;&amp; cargo build --bins</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>set "PATH=%USERPROFILE%\.cargo\bin;%PATH%" &amp;&amp; cd /d "$(ProjectDir)" &amp;&amp; cargo clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)target\debug\TgWsProxy.exe</NMakeOutput>
+    <OutDir>$(ProjectDir)target\debug\</OutDir>
+    <IntDir>$(ProjectDir)target\vs\debug\</IntDir>
+    <LocalDebuggerCommand>$(ProjectDir)target\debug\TgWsProxy.exe</LocalDebuggerCommand>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>set "PATH=%USERPROFILE%\.cargo\bin;%PATH%" &amp;&amp; cd /d "$(ProjectDir)" &amp;&amp; cargo build --release --bins &amp;&amp; if not exist dist mkdir dist &amp;&amp; copy /y target\release\TgWsProxy.exe dist\TgWsProxy.exe &amp;&amp; copy /y target\release\tg-ws-proxy-cli.exe dist\tg-ws-proxy-cli.exe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>set "PATH=%USERPROFILE%\.cargo\bin;%PATH%" &amp;&amp; cd /d "$(ProjectDir)" &amp;&amp; cargo clean &amp;&amp; cargo build --release --bins &amp;&amp; if not exist dist mkdir dist &amp;&amp; copy /y target\release\TgWsProxy.exe dist\TgWsProxy.exe &amp;&amp; copy /y target\release\tg-ws-proxy-cli.exe dist\tg-ws-proxy-cli.exe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>set "PATH=%USERPROFILE%\.cargo\bin;%PATH%" &amp;&amp; cd /d "$(ProjectDir)" &amp;&amp; cargo clean &amp;&amp; if exist dist rmdir /s /q dist</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)dist\TgWsProxy.exe</NMakeOutput>
+    <OutDir>$(ProjectDir)dist\</OutDir>
+    <IntDir>$(ProjectDir)target\vs\release\</IntDir>
+    <LocalDebuggerCommand>$(ProjectDir)dist\TgWsProxy.exe</LocalDebuggerCommand>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="Cargo.toml" />
+    <None Include="Cargo.lock" />
+    <None Include=".cargo\config.toml" />
+    <None Include="src\**\*.rs" />
+    <None Include="i18n\*.json" />
+    <None Include="ui\*.slint" />
+    <None Include="build.rs" />
+    <None Include="docs\**\*.md" />
+    <None Include=".github\workflows\*.yml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

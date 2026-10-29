@@ -4,41 +4,53 @@ on:
   push:
     tags:
       - "v*"
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  test:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install dependencies
-        shell: cmd
-        run: python -m pip install -r requirements.txt
+      - uses: Swatinem/rust-cache@v2
 
       - name: Run tests
-        shell: cmd
-        run: python -m unittest discover -s tests -t .
+        run: cargo test --locked
+
+  build:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Build
-        shell: cmd
-        run: build_nuitka.bat
+        run: cargo build --release --locked
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir dist
+          cp target/release/TgWsProxy.exe dist/TgWsProxy.exe
+          cp target/release/tg-ws-proxy-cli.exe dist/tg-ws-proxy-cli.exe
 
       - uses: actions/upload-artifact@v4
         with:
           name: TgWsProxy
-          path: dist/TgWsProxy.exe
+          path: dist/*.exe
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/TgWsProxy.exe
+          files: dist/*.exe
           generate_release_notes: true

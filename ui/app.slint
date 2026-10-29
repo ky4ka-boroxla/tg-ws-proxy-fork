@@ -1,0 +1,1827 @@
+import "fonts/Inter_400Regular.ttf";
+import "fonts/Inter_500Medium.ttf";
+import "fonts/Inter_600SemiBold.ttf";
+import "fonts/Inter_700Bold.ttf";
+import { Tr } from "tr.slint";
+
+export { Tr }
+
+export struct ResultRow {
+    label: string,
+    state: int,
+    detail: string,
+}
+
+export global Style {
+    in-out property <bool> dark: true;
+    in-out property <int> accent-index: 0;
+
+    out property <color> a0: #2aabee;
+    out property <color> b0: #1d6fe0;
+    out property <color> a1: #9b6cff;
+    out property <color> b1: #6232e0;
+    out property <color> a2: #22d3a0;
+    out property <color> b2: #0a9d6e;
+    out property <color> a3: #ffa24d;
+    out property <color> b3: #f0443d;
+    out property <color> a4: #ff6fae;
+    out property <color> b4: #d41f7a;
+    out property <color> a5: #3be0f0;
+    out property <color> b5: #0a8fc2;
+
+    out property <color> accent-a: (accent-index == 0 ? a0 : (accent-index == 1 ? a1 : (accent-index == 2 ? a2 : (accent-index == 3 ? a3 : (accent-index == 4 ? a4 : a5)))));
+    out property <color> accent-b: (accent-index == 0 ? b0 : (accent-index == 1 ? b1 : (accent-index == 2 ? b2 : (accent-index == 3 ? b3 : (accent-index == 4 ? b4 : b5)))));
+
+    out property <color> bg-top: dark ? #0d1017 : #f4f7fd;
+    out property <color> bg-bottom: dark ? #131a29 : #e6ecf8;
+    out property <color> sidebar: dark ? #0a0d13 : #ffffff;
+    out property <color> surface: dark ? #171c29 : #ffffff;
+    out property <color> surface-2: dark ? #212838 : #eef2fa;
+    out property <color> surface-3: dark ? #1d2434 : #ffffff;
+    out property <color> border: dark ? #272f42 : #e0e6f2;
+    out property <color> border-strong: dark ? #3b4764 : #c3cde2;
+    out property <color> text: dark ? #eaeef7 : #172033;
+    out property <color> text-dim: dark ? #a5afc5 : #4b5772;
+    out property <color> text-faint: dark ? #6d7893 : #8c96ad;
+    out property <color> ok: #2fc17b;
+    out property <color> warn: #f5a524;
+    out property <color> bad: #f0555a;
+
+}
+
+component Icon inherits Image {
+    in property <color> tint: Style.text;
+    colorize: root.tint;
+    image-fit: contain;
+    animate colorize { duration: 200ms; }
+}
+
+component Backdrop inherits Rectangle {
+    background: @linear-gradient(160deg, Style.bg-top, Style.bg-bottom);
+
+    Rectangle {
+        x: parent.width * 0.55 + 40px * Math.sin(animation-tick() / 1s * 14deg);
+        y: -140px + 30px * Math.cos(animation-tick() / 1s * 11deg);
+        width: 520px;
+        height: 520px;
+        background: @radial-gradient(circle, Style.accent-a.with-alpha(Style.dark ? 0.16 : 0.18) 0%, transparent 70%);
+    }
+
+    Rectangle {
+        x: -180px + 36px * Math.cos(animation-tick() / 1s * 13deg);
+        y: parent.height - 340px + 26px * Math.sin(animation-tick() / 1s * 15deg);
+        width: 560px;
+        height: 560px;
+        background: @radial-gradient(circle, Style.accent-b.with-alpha(Style.dark ? 0.14 : 0.14) 0%, transparent 70%);
+    }
+}
+
+component GButton inherits Rectangle {
+    in property <string> text;
+    in property <image> icon;
+    in property <bool> has-icon: false;
+    in property <int> kind: 0;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    property <color> fg: root.kind == 1 ? white : (root.kind == 3 ? Style.accent-b : (root.kind == 4 ? white : Style.text));
+
+    preferred-width: row.preferred-width;
+    min-width: row.preferred-width;
+    height: 40px;
+    border-radius: 11px;
+    opacity: root.enabled ? 1 : 0.4;
+    animate opacity { duration: 160ms; }
+
+    Rectangle {
+        border-radius: 11px;
+        background: Style.surface-2;
+        border-width: 1px;
+        border-color: Style.border;
+        opacity: root.kind == 0 ? 1 : 0;
+    }
+
+    Rectangle {
+        border-radius: 11px;
+        background: Style.accent-b;
+        opacity: root.kind == 1 ? 1 : 0;
+    }
+
+    Rectangle {
+        border-radius: 11px;
+        background: white;
+        opacity: root.kind == 3 ? 1 : 0;
+    }
+
+    Rectangle {
+        border-radius: 11px;
+        background: white.with-alpha(0.2);
+        border-width: 1px;
+        border-color: white.with-alpha(0.3);
+        opacity: root.kind == 4 ? 1 : 0;
+    }
+
+    Rectangle {
+        border-radius: 11px;
+        background: root.kind == 1 || root.kind == 4 ? white : Style.text;
+        opacity: !root.enabled ? 0 : (touch.pressed ? 0.2 : (touch.has-hover ? 0.1 : 0));
+        animate opacity { duration: 140ms; }
+    }
+
+    row := HorizontalLayout {
+        padding-left: 18px;
+        padding-right: 18px;
+        spacing: 8px;
+        alignment: center;
+
+        if root.has-icon: VerticalLayout {
+            alignment: center;
+            Icon {
+                width: 17px;
+                height: 17px;
+                source: root.icon;
+                tint: root.fg;
+            }
+        }
+        Text {
+            text: root.text;
+            font-size: 14px;
+            font-weight: 600;
+            color: root.fg;
+            vertical-alignment: center;
+            animate color { duration: 200ms; }
+        }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+component GSwitch inherits Rectangle {
+    in-out property <bool> checked;
+    in property <bool> enabled: true;
+    callback toggled();
+
+    width: 48px;
+    height: 28px;
+    border-radius: 14px;
+    opacity: root.enabled ? 1 : 0.4;
+    background: Style.surface-2;
+    border-width: 1px;
+    border-color: Style.border-strong;
+    animate opacity { duration: 160ms; }
+
+    Rectangle {
+        border-radius: 14px;
+        background: Style.accent-b;
+        opacity: root.checked ? 1 : 0;
+        animate opacity { duration: 220ms; easing: ease-out; }
+    }
+
+    Rectangle {
+        x: root.checked ? parent.width - self.width - 3px : 3px;
+        y: (parent.height - self.height) / 2;
+        width: touch.pressed ? 24px : 20px;
+        height: 20px;
+        border-radius: 10px;
+        background: white;
+        animate x { duration: 260ms; easing: ease-out-back; }
+        animate width { duration: 120ms; }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled();
+        }
+    }
+}
+
+component GInput inherits Rectangle {
+    in-out property <string> text;
+    in property <string> placeholder;
+    in property <bool> password: false;
+    in property <bool> read-only: false;
+    in property <bool> invalid: false;
+    in property <bool> enabled: true;
+    in property <bool> multiline: false;
+    callback edited();
+
+    height: root.multiline ? 118px : 42px;
+    border-radius: 11px;
+    background: Style.surface-2;
+    border-width: 1.5px;
+    border-color: root.invalid ? Style.bad : (field.has-focus ? Style.accent-a : Style.border);
+    opacity: root.enabled ? 1 : 0.45;
+    animate border-color { duration: 180ms; }
+    animate opacity { duration: 160ms; }
+
+    TouchArea {
+        mouse-cursor: MouseCursor.text;
+        clicked => {
+            field.focus();
+        }
+    }
+
+    field := TextInput {
+        x: 13px;
+        y: root.multiline ? 11px : 0px;
+        width: parent.width - 26px;
+        height: root.multiline ? parent.height - 22px : parent.height;
+        text <=> root.text;
+        font-size: 14px;
+        color: Style.text;
+        single-line: !root.multiline;
+        wrap: root.multiline ? TextWrap.word-wrap : TextWrap.no-wrap;
+        vertical-alignment: root.multiline ? TextVerticalAlignment.top : TextVerticalAlignment.center;
+        input-type: root.password ? InputType.password : InputType.text;
+        read-only: root.read-only;
+        enabled: root.enabled;
+        selection-background-color: Style.accent-a.with-alpha(0.4);
+        selection-foreground-color: Style.text;
+        edited => {
+            root.edited();
+        }
+    }
+
+    if root.text == "" && root.placeholder != "": Text {
+        x: 13px;
+        y: root.multiline ? 11px : 0px;
+        height: root.multiline ? 22px : parent.height;
+        text: root.placeholder;
+        font-size: 14px;
+        color: Style.text-faint;
+        vertical-alignment: center;
+    }
+}
+
+component Card inherits Rectangle {
+    in property <string> title;
+    background: Style.surface;
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: Style.border;
+
+    VerticalLayout {
+        padding: 22px;
+        spacing: 16px;
+        if root.title != "": Text {
+            text: root.title;
+            font-size: 16px;
+            font-weight: 700;
+            color: Style.text;
+        }
+        @children
+    }
+}
+
+component Field inherits VerticalLayout {
+    in property <string> label;
+    in property <string> hint;
+    in property <string> error;
+    spacing: 6px;
+
+    if root.label != "": Text {
+        text: root.label;
+        font-size: 13px;
+        font-weight: 600;
+        color: Style.text;
+    }
+
+    @children
+
+    if root.error != "": Text {
+        text: root.error;
+        font-size: 12px;
+        color: Style.bad;
+        wrap: word-wrap;
+    }
+    if root.error == "" && root.hint != "": Text {
+        text: root.hint;
+        font-size: 12px;
+        color: Style.text-faint;
+        wrap: word-wrap;
+    }
+}
+
+component SettingRow inherits HorizontalLayout {
+    in property <string> title;
+    in property <string> desc;
+    spacing: 18px;
+
+    VerticalLayout {
+        horizontal-stretch: 1;
+        alignment: center;
+        spacing: 3px;
+
+        Text {
+            text: root.title;
+            font-size: 14px;
+            font-weight: 500;
+            color: Style.text;
+            wrap: word-wrap;
+        }
+        if root.desc != "": Text {
+            text: root.desc;
+            font-size: 12px;
+            color: Style.text-faint;
+            wrap: word-wrap;
+        }
+    }
+
+    VerticalLayout {
+        alignment: center;
+        @children
+    }
+}
+
+component Segmented inherits Rectangle {
+    in property <[string]> options;
+    in-out property <int> current;
+    callback selected(int);
+
+    height: 42px;
+    border-radius: 12px;
+    background: Style.surface-2;
+    border-width: 1px;
+    border-color: Style.border;
+
+    property <length> cell: (root.width - 8px) / max(1, root.options.length);
+
+    Rectangle {
+        x: 4px + root.current * root.cell;
+        y: 4px;
+        width: root.cell;
+        height: parent.height - 8px;
+        border-radius: 9px;
+        background: Style.accent-b;
+        animate x { duration: 300ms; easing: cubic-bezier(0.22, 1, 0.36, 1); }
+    }
+
+    for option[index] in root.options: Rectangle {
+        x: 4px + index * root.cell;
+        y: 4px;
+        width: root.cell;
+        height: parent.height - 8px;
+
+        Text {
+            width: parent.width;
+            height: parent.height;
+            text: option;
+            font-size: 13px;
+            font-weight: 600;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            color: index == root.current ? white : Style.text-dim;
+            animate color { duration: 220ms; }
+        }
+
+        TouchArea {
+            mouse-cursor: pointer;
+            clicked => {
+                root.current = index;
+                root.selected(index);
+            }
+        }
+    }
+}
+
+component Swatch inherits Rectangle {
+    in property <color> a;
+    in property <color> b;
+    in property <bool> selected;
+    callback clicked();
+
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    background: root.b;
+
+    Rectangle {
+        x: 3px;
+        y: 3px;
+        width: 25px;
+        height: 25px;
+        border-radius: 12.5px;
+        background: root.a.with-alpha(0.75);
+    }
+
+    Rectangle {
+        x: -5px;
+        y: -5px;
+        width: parent.width + 10px;
+        height: parent.height + 10px;
+        border-radius: 25px;
+        border-width: 2px;
+        border-color: root.selected ? Style.text : transparent;
+        animate border-color { duration: 220ms; }
+    }
+
+    Icon {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: 18px;
+        height: 18px;
+        source: @image-url("icons/check.svg");
+        tint: white;
+        opacity: root.selected ? 1 : 0;
+        animate opacity { duration: 200ms; }
+    }
+
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+component NavItem inherits Rectangle {
+    in property <string> text;
+    in property <image> icon;
+    in property <bool> active;
+    callback clicked();
+
+    height: 44px;
+
+    Rectangle {
+        border-radius: 12px;
+        background: Style.text;
+        opacity: !root.active && touch.has-hover ? 0.07 : 0;
+        animate opacity { duration: 160ms; }
+    }
+
+    Icon {
+        x: 16px;
+        y: 12px;
+        width: 20px;
+        height: 20px;
+        source: root.icon;
+        tint: root.active ? white : Style.text-dim;
+    }
+
+    Text {
+        x: 48px;
+        width: parent.width - 56px;
+        height: parent.height;
+        text: root.text;
+        font-size: 14px;
+        font-weight: root.active ? 600 : 500;
+        color: root.active ? white : Style.text-dim;
+        vertical-alignment: center;
+        animate color { duration: 220ms; }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+component Page inherits Rectangle {
+    in property <int> index;
+    in property <int> current;
+    in property <string> title;
+    in property <string> subtitle;
+    out property <bool> active: root.current == root.index;
+
+    x: root.active ? 0px : (root.current > root.index ? -36px : 36px);
+    opacity: root.active ? 1 : 0;
+    visible: root.active || self.opacity > 0.01;
+    animate x { duration: 340ms; easing: cubic-bezier(0.22, 1, 0.36, 1); }
+    animate opacity { duration: 260ms; easing: ease-out; }
+
+    flick := Flickable {
+        interactive: false;
+
+        VerticalLayout {
+            padding-left: 36px;
+            padding-right: 40px;
+            padding-top: 32px;
+            padding-bottom: 140px;
+            spacing: 20px;
+            alignment: start;
+
+            VerticalLayout {
+                spacing: 6px;
+                Text {
+                    text: root.title;
+                    font-size: 30px;
+                    font-weight: 700;
+                    color: Style.text;
+                }
+                Text {
+                    text: root.subtitle;
+                    font-size: 14px;
+                    color: Style.text-dim;
+                    wrap: word-wrap;
+                }
+            }
+
+            @children
+        }
+    }
+
+    Rectangle {
+        x: parent.width - 9px;
+        y: 8px + (parent.height - 16px) * (-flick.content-y / max(1px, flick.content-height));
+        width: 4px;
+        height: max(36px, (parent.height - 16px) * parent.height / max(1px, flick.content-height));
+        border-radius: 2px;
+        background: Style.text.with-alpha(0.22);
+        visible: flick.content-height > parent.height + 2px;
+    }
+}
+
+component Results inherits VerticalLayout {
+    in property <string> title;
+    in property <int> state;
+    in property <[ResultRow]> rows;
+    spacing: 8px;
+
+    HorizontalLayout {
+        spacing: 10px;
+        Text {
+            text: "●";
+            font-size: 14px;
+            color: root.state == 1 ? Style.ok : (root.state == 2 ? Style.warn : Style.bad);
+        }
+        Text {
+            horizontal-stretch: 1;
+            text: root.title;
+            font-size: 14px;
+            font-weight: 700;
+            color: Style.text;
+            wrap: word-wrap;
+        }
+    }
+
+    for row in root.rows: HorizontalLayout {
+        spacing: 10px;
+        padding-left: 24px;
+        Text {
+            text: "●";
+            font-size: 10px;
+            color: row.state == 1 ? Style.ok : (row.state == 2 ? Style.warn : Style.bad);
+            vertical-alignment: center;
+        }
+        Text {
+            text: row.label;
+            font-size: 13px;
+            font-weight: 600;
+            color: Style.text;
+        }
+        Text {
+            horizontal-stretch: 1;
+            text: row.detail;
+            font-size: 12px;
+            color: Style.text-dim;
+            wrap: word-wrap;
+        }
+    }
+}
+
+component QrBox inherits Rectangle {
+    in property <image> source;
+    width: code.width + 28px;
+    height: code.height + 28px;
+    background: white;
+    border-radius: 14px;
+
+    code := Image {
+        x: 14px;
+        y: 14px;
+        width: root.source.width * 1px;
+        height: root.source.height * 1px;
+        source: root.source;
+        image-rendering: pixelated;
+    }
+}
+
+component Logo inherits Rectangle {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: Style.accent-b;
+
+    Icon {
+        x: (parent.width - self.width) / 2 - 1px;
+        y: (parent.height - self.height) / 2 + 1px;
+        width: 22px;
+        height: 22px;
+        source: @image-url("icons/send.svg");
+        tint: white;
+    }
+}
+
+export component SettingsWindow inherits Window {
+    title: Tr.window-title;
+    icon: root.win-icon;
+    default-font-family: "Inter";
+    default-font-size: 14px;
+    min-width: 880px;
+    min-height: 620px;
+    preferred-width: 1020px;
+    preferred-height: 740px;
+    background: Style.bg-bottom;
+
+    in property <image> win-icon;
+    in property <image> qr;
+    in property <string> app-name;
+    in property <string> version;
+    in property <string> link;
+    in property <string> link-address;
+    in property <string> toast;
+    in property <bool> toast-visible;
+    in property <string> banner;
+    in property <bool> dirty;
+    in property <bool> has-errors;
+    in property <bool> ask-restart;
+    in property <bool> h2-available;
+    in property <bool> shown;
+    in property <bool> veil;
+
+    in-out property <int> page: 0;
+    in-out property <bool> show-secret: false;
+    in-out property <string> host;
+    in-out property <string> port;
+    in-out property <string> secret;
+    in-out property <string> dc-ip;
+    in-out property <string> pool-size;
+    in-out property <string> buf-kb;
+    in-out property <string> log-max-mb;
+    in-out property <bool> cfproxy;
+    in-out property <bool> h2;
+    in-out property <bool> custom-enabled;
+    in-out property <string> custom-domains;
+    in-out property <bool> worker-enabled;
+    in-out property <string> worker-domains;
+    in-out property <bool> verbose;
+    in-out property <bool> no-secure;
+    in-out property <bool> autostart;
+    in-out property <int> lang-index;
+    in-out property <int> theme-index;
+    in-out property <int> accent-index;
+
+    in property <string> host-error;
+    in property <string> port-error;
+    in property <string> secret-error;
+    in property <string> dc-error;
+
+    in property <bool> cf-running;
+    in property <string> cf-title;
+    in property <int> cf-state;
+    in property <[ResultRow]> cf-rows;
+    in property <bool> worker-running;
+    in property <string> worker-title;
+    in property <int> worker-state;
+    in property <[ResultRow]> worker-rows;
+
+    in property <bool> update-running;
+    in property <string> update-text;
+    in property <bool> update-has;
+
+    callback edited();
+    callback save();
+    callback cancel();
+    callback reset();
+    callback open-telegram();
+    callback copy-link();
+    callback generate-secret();
+    callback test-cf();
+    callback test-worker();
+    callback open-docs(string);
+    callback open-log();
+    callback open-folder();
+    callback check-updates();
+    callback open-release();
+    callback language-selected(int);
+    callback theme-selected(int);
+    callback accent-selected(int);
+    callback restart-choice(bool);
+    callback dismiss-banner();
+
+    property <length> side: 244px;
+    property <length> area: root.width - root.side;
+
+    Backdrop {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+    }
+
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: root.side;
+        height: root.height;
+        background: Style.sidebar;
+
+        Rectangle {
+            x: parent.width - 1px;
+            width: 1px;
+            background: Style.border;
+        }
+
+        Logo {
+            x: 22px;
+            y: 26px;
+        }
+
+        Text {
+            x: 76px;
+            y: 24px;
+            text: root.app-name;
+            font-size: 17px;
+            font-weight: 700;
+            color: Style.text;
+        }
+
+        Text {
+            x: 76px;
+            y: 46px;
+            text: "v" + root.version;
+            font-size: 12px;
+            color: Style.text-faint;
+        }
+
+        Rectangle {
+            x: 14px;
+            y: 112px + root.page * 52px;
+            width: root.side - 28px;
+            height: 44px;
+            border-radius: 12px;
+            background: Style.accent-b;
+            animate y { duration: 340ms; easing: ease-out-back; }
+        }
+
+        NavItem {
+            x: 14px;
+            y: 112px;
+            width: root.side - 28px;
+            text: Tr.nav-connection;
+            icon: @image-url("icons/shield.svg");
+            active: root.page == 0;
+            clicked => {
+                root.page = 0;
+            }
+        }
+        NavItem {
+            x: 14px;
+            y: 164px;
+            width: root.side - 28px;
+            text: Tr.nav-routing;
+            icon: @image-url("icons/route.svg");
+            active: root.page == 1;
+            clicked => {
+                root.page = 1;
+            }
+        }
+        NavItem {
+            x: 14px;
+            y: 216px;
+            width: root.side - 28px;
+            text: Tr.nav-cloudflare;
+            icon: @image-url("icons/cloud.svg");
+            active: root.page == 2;
+            clicked => {
+                root.page = 2;
+            }
+        }
+        NavItem {
+            x: 14px;
+            y: 268px;
+            width: root.side - 28px;
+            text: Tr.nav-advanced;
+            icon: @image-url("icons/sliders.svg");
+            active: root.page == 3;
+            clicked => {
+                root.page = 3;
+            }
+        }
+        NavItem {
+            x: 14px;
+            y: 320px;
+            width: root.side - 28px;
+            text: Tr.nav-interface;
+            icon: @image-url("icons/monitor.svg");
+            active: root.page == 4;
+            clicked => {
+                root.page = 4;
+            }
+        }
+    }
+
+    Page {
+        x: root.side;
+        y: 0px;
+        width: root.area;
+        height: root.height;
+        index: 0;
+        current: root.page;
+        title: Tr.connection-title;
+        subtitle: Tr.connection-subtitle;
+
+        Rectangle {
+            height: 232px;
+            border-radius: 20px;
+            background: Style.accent-b;
+
+            Rectangle {
+                x: parent.width - 360px + 22px * Math.sin(animation-tick() / 1s * 40deg);
+                y: 18px + 10px * Math.cos(animation-tick() / 1s * 32deg);
+                width: 196px;
+                height: 196px;
+                border-radius: 98px;
+                background: Style.accent-a.with-alpha(0.5);
+            }
+            Rectangle {
+                x: 40px + 18px * Math.cos(animation-tick() / 1s * 34deg);
+                y: parent.height - 170px + 8px * Math.sin(animation-tick() / 1s * 46deg);
+                width: 150px;
+                height: 150px;
+                border-radius: 75px;
+                background: white.with-alpha(0.08);
+            }
+
+            HorizontalLayout {
+                padding: 28px;
+                spacing: 28px;
+
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    alignment: center;
+                    spacing: 10px;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        Text {
+                            text: "●";
+                            font-size: 11px;
+                            color: white.with-alpha(0.55 + 0.45 * Math.sin(animation-tick() / 1s * 172deg));
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: Tr.hero-label;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: white.with-alpha(0.85);
+                            vertical-alignment: center;
+                        }
+                    }
+                    Text {
+                        text: root.link != "" ? root.link-address : Tr.link-unavailable;
+                        font-size: root.link != "" ? 32px : 15px;
+                        font-weight: 700;
+                        color: white;
+                        wrap: word-wrap;
+                    }
+                    Text {
+                        text: Tr.scan;
+                        font-size: 12px;
+                        color: white.with-alpha(0.75);
+                    }
+                    HorizontalLayout {
+                        spacing: 10px;
+                        alignment: start;
+                        GButton {
+                            text: Tr.open-tg;
+                            kind: 3;
+                            has-icon: true;
+                            icon: @image-url("icons/send.svg");
+                            enabled: root.link != "";
+                            clicked => {
+                                root.open-telegram();
+                            }
+                        }
+                        GButton {
+                            text: Tr.copy-link;
+                            kind: 4;
+                            has-icon: true;
+                            icon: @image-url("icons/copy.svg");
+                            enabled: root.link != "";
+                            clicked => {
+                                root.copy-link();
+                            }
+                        }
+                    }
+                }
+
+                VerticalLayout {
+                    alignment: center;
+                    QrBox {
+                        source: root.qr;
+                        visible: root.link != "";
+                    }
+                }
+            }
+        }
+
+        Card {
+            title: Tr.address-title;
+            HorizontalLayout {
+                spacing: 18px;
+                Field {
+                    horizontal-stretch: 2;
+                    label: Tr.address-host;
+                    hint: Tr.address-host-hint;
+                    error: root.host-error;
+                    GInput {
+                        text <=> root.host;
+                        invalid: root.host-error != "";
+                        edited => {
+                            root.edited();
+                        }
+                    }
+                }
+                Field {
+                    horizontal-stretch: 1;
+                    label: Tr.address-port;
+                    hint: Tr.address-port-hint;
+                    error: root.port-error;
+                    GInput {
+                        text <=> root.port;
+                        invalid: root.port-error != "";
+                        edited => {
+                            root.edited();
+                        }
+                    }
+                }
+            }
+            Field {
+                label: Tr.secret;
+                hint: Tr.secret-hint;
+                error: root.secret-error;
+                HorizontalLayout {
+                    spacing: 10px;
+                    GInput {
+                        horizontal-stretch: 1;
+                        text <=> root.secret;
+                        password: !root.show-secret;
+                        invalid: root.secret-error != "";
+                        edited => {
+                            root.edited();
+                        }
+                    }
+                    GButton {
+                        text: root.show-secret ? Tr.hide : Tr.show;
+                        has-icon: true;
+                        icon: root.show-secret ? @image-url("icons/eye-off.svg") : @image-url("icons/eye.svg");
+                        clicked => {
+                            root.show-secret = !root.show-secret;
+                        }
+                    }
+                    GButton {
+                        text: Tr.generate;
+                        has-icon: true;
+                        icon: @image-url("icons/refresh.svg");
+                        clicked => {
+                            root.generate-secret();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Page {
+        x: root.side;
+        y: 0px;
+        width: root.area;
+        height: root.height;
+        index: 1;
+        current: root.page;
+        title: Tr.routing-title;
+        subtitle: Tr.routing-subtitle;
+
+        Card {
+            title: Tr.dc-title;
+            Field {
+                hint: Tr.dc-hint;
+                error: root.dc-error;
+                GInput {
+                    multiline: true;
+                    text <=> root.dc-ip;
+                    invalid: root.dc-error != "";
+                    edited => {
+                        root.edited();
+                    }
+                }
+            }
+        }
+        Card {
+            title: Tr.direct-title;
+            HorizontalLayout {
+                spacing: 18px;
+                Field {
+                    horizontal-stretch: 1;
+                    label: Tr.pool;
+                    hint: Tr.pool-hint;
+                    GInput {
+                        text <=> root.pool-size;
+                        edited => {
+                            root.edited();
+                        }
+                    }
+                }
+                Field {
+                    horizontal-stretch: 1;
+                    label: Tr.buf;
+                    hint: Tr.buf-hint;
+                    GInput {
+                        text <=> root.buf-kb;
+                        edited => {
+                            root.edited();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Page {
+        x: root.side;
+        y: 0px;
+        width: root.area;
+        height: root.height;
+        index: 2;
+        current: root.page;
+        title: Tr.cloudflare-title;
+        subtitle: Tr.cloudflare-subtitle;
+
+        Card {
+            title: Tr.cf-title;
+            SettingRow {
+                title: Tr.cf-enable;
+                desc: Tr.cf-enable-desc;
+                GSwitch {
+                    checked <=> root.cfproxy;
+                    toggled => {
+                        root.edited();
+                    }
+                }
+            }
+            SettingRow {
+                title: Tr.h2;
+                desc: Tr.h2-desc;
+                GSwitch {
+                    enabled: root.h2-available;
+                    checked <=> root.h2;
+                    toggled => {
+                        root.edited();
+                    }
+                }
+            }
+            SettingRow {
+                title: Tr.custom;
+                desc: Tr.custom-desc;
+                GSwitch {
+                    checked <=> root.custom-enabled;
+                    toggled => {
+                        root.edited();
+                    }
+                }
+            }
+            HorizontalLayout {
+                spacing: 10px;
+                GInput {
+                    horizontal-stretch: 1;
+                    enabled: root.custom-enabled;
+                    placeholder: Tr.domains-placeholder;
+                    text <=> root.custom-domains;
+                    edited => {
+                        root.edited();
+                    }
+                }
+                GButton {
+                    text: Tr.guide;
+                    has-icon: true;
+                    icon: @image-url("icons/book.svg");
+                    clicked => {
+                        root.open-docs("CfProxy.md");
+                    }
+                }
+                GButton {
+                    text: root.cf-running ? Tr.testing : Tr.test;
+                    kind: 1;
+                    has-icon: true;
+                    icon: @image-url("icons/zap.svg");
+                    enabled: !root.cf-running;
+                    clicked => {
+                        root.test-cf();
+                    }
+                }
+            }
+            if root.cf-title != "": Results {
+                title: root.cf-title;
+                state: root.cf-state;
+                rows: root.cf-rows;
+            }
+        }
+
+        Card {
+            title: Tr.worker-title;
+            SettingRow {
+                title: Tr.worker-enable;
+                desc: Tr.worker-desc;
+                GSwitch {
+                    checked <=> root.worker-enabled;
+                    toggled => {
+                        root.edited();
+                    }
+                }
+            }
+            HorizontalLayout {
+                spacing: 10px;
+                GInput {
+                    horizontal-stretch: 1;
+                    enabled: root.worker-enabled;
+                    placeholder: Tr.domains-placeholder;
+                    text <=> root.worker-domains;
+                    edited => {
+                        root.edited();
+                    }
+                }
+                GButton {
+                    text: Tr.guide;
+                    has-icon: true;
+                    icon: @image-url("icons/book.svg");
+                    clicked => {
+                        root.open-docs("CfWorker.md");
+                    }
+                }
+                GButton {
+                    text: root.worker-running ? Tr.testing : Tr.test;
+                    kind: 1;
+                    has-icon: true;
+                    icon: @image-url("icons/zap.svg");
+                    enabled: !root.worker-running && root.worker-enabled && root.worker-domains != "";
+                    clicked => {
+                        root.test-worker();
+                    }
+                }
+            }
+            if root.worker-title != "": Results {
+                title: root.worker-title;
+                state: root.worker-state;
+                rows: root.worker-rows;
+            }
+        }
+    }
+
+    Page {
+        x: root.side;
+        y: 0px;
+        width: root.area;
+        height: root.height;
+        index: 3;
+        current: root.page;
+        title: Tr.advanced-title;
+        subtitle: Tr.advanced-subtitle;
+
+        Card {
+            SettingRow {
+                title: Tr.verbose;
+                desc: Tr.verbose-desc;
+                GSwitch {
+                    checked <=> root.verbose;
+                    toggled => {
+                        root.edited();
+                    }
+                }
+            }
+            SettingRow {
+                title: Tr.no-secure;
+                desc: Tr.no-secure-desc;
+                GSwitch {
+                    checked <=> root.no-secure;
+                    toggled => {
+                        root.edited();
+                    }
+                }
+            }
+            Field {
+                label: Tr.log-mb;
+                hint: Tr.log-mb-hint;
+                HorizontalLayout {
+                    alignment: start;
+                    GInput {
+                        width: 180px;
+                        text <=> root.log-max-mb;
+                        edited => {
+                            root.edited();
+                        }
+                    }
+                }
+            }
+        }
+        Card {
+            title: Tr.files-title;
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: start;
+                GButton {
+                    text: Tr.open-log;
+                    has-icon: true;
+                    icon: @image-url("icons/file.svg");
+                    clicked => {
+                        root.open-log();
+                    }
+                }
+                GButton {
+                    text: Tr.open-folder;
+                    has-icon: true;
+                    icon: @image-url("icons/folder.svg");
+                    clicked => {
+                        root.open-folder();
+                    }
+                }
+            }
+        }
+    }
+
+    Page {
+        x: root.side;
+        y: 0px;
+        width: root.area;
+        height: root.height;
+        index: 4;
+        current: root.page;
+        title: Tr.interface-title;
+        subtitle: Tr.interface-subtitle;
+
+        Card {
+            title: Tr.mode;
+            Field {
+                label: Tr.language;
+                Segmented {
+                    options: ["Русский", "English"];
+                    current <=> root.lang-index;
+                    selected(index) => {
+                        root.language-selected(index);
+                    }
+                }
+            }
+            Field {
+                label: Tr.theme;
+                Segmented {
+                    options: [Tr.theme-auto, Tr.theme-light, Tr.theme-dark];
+                    current <=> root.theme-index;
+                    selected(index) => {
+                        root.theme-selected(index);
+                    }
+                }
+            }
+            Field {
+                label: Tr.accent;
+                hint: Tr.accent-desc;
+                HorizontalLayout {
+                    spacing: 16px;
+                    alignment: start;
+                    padding-left: 5px;
+                    padding-top: 6px;
+                    padding-bottom: 6px;
+                    Swatch {
+                        a: Style.a0;
+                        b: Style.b0;
+                        selected: root.accent-index == 0;
+                        clicked => {
+                            root.accent-selected(0);
+                        }
+                    }
+                    Swatch {
+                        a: Style.a1;
+                        b: Style.b1;
+                        selected: root.accent-index == 1;
+                        clicked => {
+                            root.accent-selected(1);
+                        }
+                    }
+                    Swatch {
+                        a: Style.a2;
+                        b: Style.b2;
+                        selected: root.accent-index == 2;
+                        clicked => {
+                            root.accent-selected(2);
+                        }
+                    }
+                    Swatch {
+                        a: Style.a3;
+                        b: Style.b3;
+                        selected: root.accent-index == 3;
+                        clicked => {
+                            root.accent-selected(3);
+                        }
+                    }
+                    Swatch {
+                        a: Style.a4;
+                        b: Style.b4;
+                        selected: root.accent-index == 4;
+                        clicked => {
+                            root.accent-selected(4);
+                        }
+                    }
+                    Swatch {
+                        a: Style.a5;
+                        b: Style.b5;
+                        selected: root.accent-index == 5;
+                        clicked => {
+                            root.accent-selected(5);
+                        }
+                    }
+                }
+            }
+            SettingRow {
+                title: Tr.autostart;
+                desc: Tr.autostart-desc;
+                GSwitch {
+                    checked <=> root.autostart;
+                    toggled => {
+                        root.edited();
+                    }
+                }
+            }
+        }
+
+        Card {
+            title: Tr.about;
+            Text {
+                text: Tr.version + " " + root.version;
+                font-size: 13px;
+                color: Style.text-dim;
+            }
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: start;
+                GButton {
+                    text: root.update-running ? Tr.checking : Tr.check-updates;
+                    has-icon: true;
+                    icon: @image-url("icons/refresh.svg");
+                    enabled: !root.update-running;
+                    clicked => {
+                        root.check-updates();
+                    }
+                }
+                if root.update-has: GButton {
+                    text: Tr.open-release;
+                    kind: 1;
+                    has-icon: true;
+                    icon: @image-url("icons/download.svg");
+                    clicked => {
+                        root.open-release();
+                    }
+                }
+            }
+            if root.update-text != "": Text {
+                text: root.update-text;
+                font-size: 13px;
+                color: Style.text-dim;
+                wrap: word-wrap;
+            }
+        }
+    }
+
+    Rectangle {
+        x: root.side + 28px;
+        y: root.banner != "" ? 18px : -80px;
+        width: root.area - 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: Style.surface-3;
+        border-width: 1px;
+        border-color: Style.bad;
+        opacity: root.banner != "" ? 1 : 0;
+        animate y { duration: 360ms; easing: ease-out-back; }
+        animate opacity { duration: 200ms; }
+
+        HorizontalLayout {
+            padding-left: 18px;
+            padding-right: 12px;
+            spacing: 12px;
+            VerticalLayout {
+                alignment: center;
+                Icon {
+                    width: 20px;
+                    height: 20px;
+                    source: @image-url("icons/alert.svg");
+                    tint: Style.bad;
+                }
+            }
+            Text {
+                horizontal-stretch: 1;
+                text: root.banner;
+                font-size: 13px;
+                color: Style.text;
+                vertical-alignment: center;
+                wrap: word-wrap;
+            }
+            VerticalLayout {
+                alignment: center;
+                GButton {
+                    text: "";
+                    has-icon: true;
+                    icon: @image-url("icons/x.svg");
+                    kind: 0;
+                    height: 34px;
+                    clicked => {
+                        root.dismiss-banner();
+                    }
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        width: 500px;
+        height: 62px;
+        x: root.side + (root.area - self.width) / 2;
+        y: root.dirty ? root.height - 90px : root.height + 12px;
+        border-radius: 20px;
+        background: Style.surface-3;
+        border-width: 1px;
+        border-color: Style.border-strong;
+        opacity: root.dirty ? 1 : 0;
+        visible: root.dirty || self.opacity > 0.01;
+        animate y { duration: 420ms; easing: ease-out-back; }
+        animate opacity { duration: 220ms; }
+
+        HorizontalLayout {
+            padding: 11px;
+            padding-left: 22px;
+            spacing: 10px;
+            HorizontalLayout {
+                horizontal-stretch: 1;
+                spacing: 9px;
+                Text {
+                    text: "●";
+                    font-size: 11px;
+                    color: Style.warn.with-alpha(0.6 + 0.4 * Math.sin(animation-tick() / 1s * 229deg));
+                    vertical-alignment: center;
+                }
+                Text {
+                    text: Tr.unsaved;
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: Style.text;
+                    vertical-alignment: center;
+                }
+            }
+            GButton {
+                text: Tr.reset;
+                has-icon: true;
+                icon: @image-url("icons/refresh.svg");
+                clicked => {
+                    root.reset();
+                }
+            }
+            GButton {
+                text: Tr.save;
+                kind: 1;
+                has-icon: true;
+                icon: @image-url("icons/check.svg");
+                enabled: !root.has-errors;
+                clicked => {
+                    root.save();
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        height: 46px;
+        width: toast-text.preferred-width + 74px;
+        x: root.side + (root.area - self.width) / 2;
+        y: root.toast-visible ? root.height - (root.dirty ? 168px : 100px) : root.height + 12px;
+        border-radius: 23px;
+        background: Style.accent-b;
+        opacity: root.toast-visible ? 1 : 0;
+        visible: root.toast-visible || self.opacity > 0.01;
+        animate y { duration: 380ms; easing: ease-out-back; }
+        animate opacity { duration: 220ms; }
+
+        Icon {
+            x: 20px;
+            y: 13px;
+            width: 20px;
+            height: 20px;
+            source: @image-url("icons/check.svg");
+            tint: white;
+        }
+        toast-text := Text {
+            x: 50px;
+            height: parent.height;
+            text: root.toast;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            vertical-alignment: center;
+        }
+    }
+
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+        background: #000000bb;
+        opacity: root.ask-restart ? 1 : 0;
+        visible: root.ask-restart || self.opacity > 0.01;
+        animate opacity { duration: 240ms; }
+
+        TouchArea {}
+
+        Rectangle {
+            width: min(460px, parent.width - 48px);
+            height: dialog.preferred-height;
+            x: (parent.width - self.width) / 2;
+            y: root.ask-restart ? (parent.height - self.height) / 2 : (parent.height - self.height) / 2 + 40px;
+            background: Style.surface;
+            border-radius: 20px;
+            border-width: 1px;
+            border-color: Style.border-strong;
+            animate y { duration: 380ms; easing: ease-out-back; }
+
+            dialog := VerticalLayout {
+                padding: 28px;
+                spacing: 18px;
+                Text {
+                    text: Tr.restart-title;
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: Style.text;
+                }
+                Text {
+                    text: Tr.restart-body;
+                    font-size: 14px;
+                    color: Style.text-dim;
+                    wrap: word-wrap;
+                }
+                HorizontalLayout {
+                    spacing: 12px;
+                    alignment: end;
+                    GButton {
+                        text: Tr.restart-later;
+                        clicked => {
+                            root.restart-choice(false);
+                        }
+                    }
+                    GButton {
+                        text: Tr.restart-now;
+                        kind: 1;
+                        has-icon: true;
+                        icon: @image-url("icons/refresh.svg");
+                        clicked => {
+                            root.restart-choice(true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+        background: Style.bg-bottom;
+        opacity: root.shown ? 0 : 1;
+        visible: self.opacity > 0.01;
+        animate opacity { duration: 520ms; easing: ease-out; }
+    }
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+        background: Style.bg-bottom;
+        opacity: root.veil ? 1 : 0;
+        visible: root.veil || self.opacity > 0.01;
+        animate opacity { duration: root.veil ? 0ms : 460ms; easing: ease-out; }
+    }
+}
+
+component Reveal inherits Rectangle {
+    in property <bool> shown;
+    in property <duration> wait: 0ms;
+    opacity: root.shown ? 1 : 0;
+    animate opacity { duration: 520ms; delay: root.wait; easing: ease-out; }
+}
+
+export component FirstRunWindow inherits Window {
+    title: Tr.fr-title;
+    icon: root.win-icon;
+    default-font-family: "Inter";
+    default-font-size: 14px;
+    preferred-width: 720px;
+    preferred-height: 800px;
+    min-width: 640px;
+    min-height: 700px;
+    background: Style.bg-bottom;
+
+    in property <image> win-icon;
+    in property <image> qr;
+    in property <string> host;
+    in property <string> port;
+    in property <string> secret;
+    in property <bool> copied;
+    in property <bool> shown;
+
+    callback add-telegram();
+    callback copy-link();
+    callback finish();
+
+    Backdrop {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+    }
+
+    Flickable {
+        interactive: false;
+
+        VerticalLayout {
+            padding-left: 44px;
+            padding-right: 44px;
+            padding-top: 36px;
+            padding-bottom: 36px;
+            spacing: 20px;
+            alignment: start;
+
+            Reveal {
+                shown: root.shown;
+                VerticalLayout {
+                    spacing: 10px;
+                    HorizontalLayout {
+                        alignment: start;
+                        spacing: 16px;
+                        Rectangle {
+                            width: 64px;
+                            height: 64px;
+                            border-radius: 20px;
+                            background: Style.accent-b;
+                            Icon {
+                                x: 17px;
+                                y: 18px;
+                                width: 30px;
+                                height: 30px;
+                                source: @image-url("icons/send.svg");
+                                tint: white;
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            Text {
+                                text: Tr.fr-title;
+                                font-size: 26px;
+                                font-weight: 700;
+                                color: Style.text;
+                                wrap: word-wrap;
+                            }
+                        }
+                    }
+                    Text {
+                        text: Tr.fr-subtitle;
+                        font-size: 14px;
+                        color: Style.text-dim;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
+            Reveal {
+                shown: root.shown;
+                wait: 120ms;
+                Rectangle {
+                    border-radius: 20px;
+                    background: Style.accent-b;
+
+                    Rectangle {
+                        x: parent.width - 330px + 18px * Math.sin(animation-tick() / 1s * 40deg);
+                        y: 12px + 8px * Math.cos(animation-tick() / 1s * 32deg);
+                        width: 150px;
+                        height: 150px;
+                        border-radius: 75px;
+                        background: Style.accent-a.with-alpha(0.5);
+                    }
+
+                    HorizontalLayout {
+                        padding: 26px;
+                        spacing: 26px;
+                        VerticalLayout {
+                            horizontal-stretch: 1;
+                            alignment: center;
+                            spacing: 12px;
+                            GButton {
+                                text: Tr.fr-add;
+                                kind: 3;
+                                has-icon: true;
+                                icon: @image-url("icons/send.svg");
+                                clicked => {
+                                    root.add-telegram();
+                                }
+                            }
+                            GButton {
+                                text: root.copied ? Tr.copied : Tr.copy-link;
+                                kind: 4;
+                                has-icon: true;
+                                icon: root.copied ? @image-url("icons/check.svg") : @image-url("icons/copy.svg");
+                                clicked => {
+                                    root.copy-link();
+                                }
+                            }
+                            Text {
+                                text: Tr.scan;
+                                font-size: 12px;
+                                color: white.with-alpha(0.8);
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            QrBox {
+                                source: root.qr;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Reveal {
+                shown: root.shown;
+                wait: 240ms;
+                Card {
+                    title: Tr.fr-manual-title;
+                    Text {
+                        text: Tr.fr-manual-hint;
+                        font-size: 12px;
+                        color: Style.text-dim;
+                        wrap: word-wrap;
+                    }
+                    HorizontalLayout {
+                        spacing: 14px;
+                        Field {
+                            horizontal-stretch: 2;
+                            label: Tr.address-host;
+                            GInput {
+                                read-only: true;
+                                text: root.host;
+                            }
+                        }
+                        Field {
+                            horizontal-stretch: 1;
+                            label: Tr.address-port;
+                            GInput {
+                                read-only: true;
+                                text: root.port;
+                            }
+                        }
+                    }
+                    Field {
+                        label: Tr.secret;
+                        GInput {
+                            read-only: true;
+                            text: root.secret;
+                        }
+                    }
+                }
+            }
+
+            Reveal {
+                shown: root.shown;
+                wait: 360ms;
+                VerticalLayout {
+                    spacing: 16px;
+                    Text {
+                        text: Tr.fr-tray;
+                        font-size: 12px;
+                        color: Style.text-faint;
+                        wrap: word-wrap;
+                    }
+                    GButton {
+                        text: Tr.fr-start;
+                        kind: 1;
+                        height: 46px;
+                        has-icon: true;
+                        icon: @image-url("icons/check.svg");
+                        clicked => {
+                            root.finish();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

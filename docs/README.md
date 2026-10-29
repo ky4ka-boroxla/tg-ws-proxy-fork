@@ -95,20 +95,26 @@ Telegram Desktop → MTProto Proxy (127.0.0.1:1443) → WebSocket → Telegram D
 
 ## Сборка из исходников
 
-Требуется Windows 10+ и Python 3.9+.
-
-1. Склонируйте репозиторий
-2. Запустите `build_nuitka.bat`
-3. Готовый файл появится в `dist\TgWsProxy.exe`
-
-Скрипт сам создаст виртуальное окружение `.venv`, установит зависимости из `requirements.txt` и Nuitka. Для сборки нужен C-компилятор (Visual Studio Build Tools или MinGW64). Если его нет, Nuitka предложит скачать MinGW64 автоматически.
-
-Запуск без сборки:
+Проект написан на Rust (edition 2021). Нужен [Rust](https://rustup.rs) 1.85 или новее.
 
 ```
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python windows.py
+cargo test
+cargo build --release
+```
+
+Готовые файлы появятся в `target\release`:
+
+- `TgWsProxy.exe` — приложение в системном трее
+- `tg-ws-proxy-cli.exe` — консольная версия ядра прокси
+
+Проект работает только на Windows. Интерфейс написан на [Slint](https://slint.dev). Окно настроек и окно первого запуска запускаются тем же исполняемым файлом отдельным процессом (`TgWsProxy.exe --settings`, `TgWsProxy.exe --first-run`).
+
+Сборка из Visual Studio: откройте `TgWsProxy.slnx` (Visual Studio 2022 17.10+ или новее), выберите конфигурацию `Release | x64` и нажмите «Собрать решение». Внутри запускается `cargo`, поэтому Rust должен быть установлен. Готовые файлы окажутся в `dist\`.
+
+Запуск консольной версии:
+
+```
+cargo run --release --bin tg-ws-proxy-cli -- --port 1443
 ```
 
 ## Лицензия
